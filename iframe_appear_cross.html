@@ -7,4 +7,13 @@
 <a href="https://appear.in/media-test">Link</a>
 </pre>
 </body>
+<script>
+(async () => {
+  const ms = new URLSearchParams(window.location.search).get("delay");
+  if (ms) {
+    await new Promise(r => setTimeout(r, ms));
+    window.location = "https://appear.in/media-test";
+  }
+})();
+</script>
 </html>
