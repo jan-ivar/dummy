@@ -1,0 +1,65 @@
+<!DOCTYPE HTML>
+<html>
+<body>
+
+<button id="replace">Replace!</button>
+<div id="div"></div><br>
+<video id="video0" width="480" height="270" src="NASA_Scientist_Reveals_Greenlands_Geologic_Past.webm" autoplay controls></video>
+<video id="video1" width="480" height="270" src="Volcano_Lava_Sample.webm" autoplay controls></video>
+<video id="video2" width="480" height="270" autoplay controls></video>
+<video id="video3" width="480" height="270" autoplay controls></video>
+<div id="div"></div><br>
+<a id="link"></a>
+<script>
+
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+const log = msg => div.innerHTML += msg + "<br>";
+
+replace.onclick = () => {
+  const stream = video0.captureStream();
+  const old = video2.srcObject.getTracks().find(({kind}) => kind == "video");
+  log("removeTrack");
+  video2.srcObject.removeTrack(old);
+  log("addTrack");
+  video2.srcObject.addTrack(stream.getVideoTracks()[0]);
+  log("done");
+}
+
+(async (seconds = 20) => {
+  try {
+    await new Promise(r => video1.onloadedmetadata = r);
+    if (!video1.captureStream) {
+      video1.captureStream = video1.mozCaptureStream;
+      video0.captureStream = video0.mozCaptureStream;
+    }
+    video2.srcObject = video1.captureStream();
+    log(`Recording ${seconds} seconds`);
+    const blob = await record(video2.srcObject, seconds * 1000);
+    video3.src = link.href = URL.createObjectURL(blob);
+    link.download = "recording.webm";
+    link.textContent = "Download recording";
+    log("Playing "+ blob.type +" recording");
+  } catch (e) {
+    log(`Failed: ${e}`);
+  }
+})();
+
+async function record(stream, ms) {
+  const rec = new MediaRecorder(stream), data = [];
+  rec.ondataavailable = e => data.push(e.data);
+  rec.start();
+  let stopped = new Promise((resolve, reject) => {
+    rec.onstop = resolve;
+    rec.onerror = e => {
+      log("onerror");
+      reject(e.error);
+    }
+  });
+  await Promise.all([stopped, wait(ms).then(() => rec.stop())]);
+  return new Blob(data);
+}
+
+</script>
+</pre>
+</body>
+</html>
