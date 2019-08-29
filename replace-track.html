@@ -2,7 +2,7 @@
 <html>
 <body>
 
-<button id="replace">Replace!</button>
+<button id="start">Start!</button><button id="replace">Replace!</button>
 <div id="div"></div><br>
 <video id="video0" width="480" height="270" src="NASA_Scientist_Reveals_Greenlands_Geologic_Past.webm" autoplay controls></video>
 <video id="video1" width="480" height="270" src="Volcano_Lava_Sample.webm" autoplay controls></video>
@@ -25,7 +25,7 @@ replace.onclick = () => {
   log("done");
 }
 
-(async (seconds = 20) => {
+start.onclick = async (seconds = 20) => {
   try {
     await new Promise(r => video1.onloadedmetadata = r);
     if (!video1.captureStream) {
@@ -42,7 +42,7 @@ replace.onclick = () => {
   } catch (e) {
     log(`Failed: ${e}`);
   }
-})();
+};
 
 async function record(stream, ms) {
   const rec = new MediaRecorder(stream), data = [];
