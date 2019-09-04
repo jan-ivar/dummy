@@ -4,10 +4,10 @@
 
 <button id="start">Start!</button><button id="replace">Replace!</button>
 <div id="div"></div><br>
-<video id="video0" width="480" height="270" src="NASA_Scientist_Reveals_Greenlands_Geologic_Past.webm" autoplay controls></video>
-<video id="video1" width="480" height="270" src="Volcano_Lava_Sample.webm" autoplay controls></video>
-<video id="video2" width="480" height="270" autoplay controls></video>
-<video id="video3" width="480" height="270" autoplay controls></video>
+<video id="video0" width="480" height="270" src="NASA_Scientist_Reveals_Greenlands_Geologic_Past.webm" controls></video>
+<video id="video1" width="480" height="270" src="Volcano_Lava_Sample.webm" controls></video>
+<video id="video2" width="480" height="270" controls></video>
+<video id="video3" width="480" height="270" controls></video>
 <div id="div"></div><br>
 <a id="link"></a>
 <script>
@@ -22,20 +22,26 @@ replace.onclick = () => {
   video2.srcObject.removeTrack(old);
   log("addTrack");
   video2.srcObject.addTrack(stream.getVideoTracks()[0]);
-  log("done");
+  log("added");
 }
 
-start.onclick = async (seconds = 20) => {
+start.onclick = async () => {
+  const seconds = 10;
   try {
-    await new Promise(r => video1.onloadedmetadata = r);
     if (!video1.captureStream) {
       video1.captureStream = video1.mozCaptureStream;
       video0.captureStream = video0.mozCaptureStream;
     }
+    await video0.play();
+    await video1.play();
     video2.srcObject = video1.captureStream();
+    const playing = video2.play();
+    await new Promise(r => video2.onloadedmetadata = r);
+    await playing;
     log(`Recording ${seconds} seconds`);
     const blob = await record(video2.srcObject, seconds * 1000);
     video3.src = link.href = URL.createObjectURL(blob);
+    await video3.play();
     link.download = "recording.webm";
     link.textContent = "Download recording";
     log("Playing "+ blob.type +" recording");
