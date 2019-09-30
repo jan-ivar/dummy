@@ -1,0 +1,19 @@
+<html>
+<meta charset=utf-8>
+<body>
+<p>iframe test.</p>
+<iframe id="iframe" allow="camera;microphone" src="https://meet.jit.si/test123456" width="100%" height="80%" frameborder="1">
+</iframe>
+<a href="https://meet.jit.si/test123456">Link</a>
+</pre>
+</body>
+<script>
+(async () => {
+  const ms = new URLSearchParams(window.location.search).get("delay");
+  if (ms) {
+    await new Promise(r => setTimeout(r, ms));
+    window.location = "https://meet.jit.si/test123456";
+  }
+})();
+</script>
+</html>
