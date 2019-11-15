@@ -9,12 +9,14 @@ const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 button.onclick = async () => {
   try {
-    const p = navigator.mediaDevices.getDisplayMedia({video: true});
-    (async () => {
-      await wait(5000);
+    const stream = await Promise.race([
+      navigator.mediaDevices.getDisplayMedia({video: true}),
+      wait(5000)
+    ]);
+    if (!stream) {
       window.location = window.location.href;
-    })();
-    video.srcObject = await p;
+    }
+    video.srcObject = stream;
   } catch(e) {
     console.log(e);
   }
