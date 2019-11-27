@@ -12,21 +12,18 @@ const promiseState = p => Promise.race([
   Promise.resolve().then(0).then(() => "pending")
 ]);
 
-const dumpPromiseState = p  => (async () => console.log(await promiseState(p)))();
+function foo() {
+  return Promise.reject();
+}
 
-async function foo() {
-  return (async () => {
-    const a = Promise.reject();
-    dumpPromiseState(a);
-    await a;
-  })();
+async function bar() {
+  return Promise.reject();
 }
 
 (async () => {
-  const b = foo();
-  dumpPromiseState(b);
+  console.log(await promiseState(foo()));
+  console.log(await promiseState(bar()));
 })();
-
 
 </script>
 </pre>
