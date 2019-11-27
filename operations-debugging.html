@@ -1,0 +1,70 @@
+<!DOCTYPE HTML>
+<html>
+<body>
+<div id="div"></div><br>
+<script>
+
+const console = { log: msg => div.innerHTML += msg + "<br>" };
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+class PC {
+  constructor() {
+    this.operations = 0;
+    const pc = this;
+    this._impl = {
+      sld: function(sdp) {
+        sdp.length? pc._onSLDSuccess("yay") : pc._onSLDFailure(new Error("nay"));
+      }
+    }
+  }
+
+  async _chain(func) {
+    const p = (async () => {
+      if (this._operations++) {
+        await this._operationsChain;
+      }
+      const p2 = func();
+      return p2;
+    })();
+    // don't propagate errors in the operations chain (this is a fork of p).
+    this._operationsChain = p.catch(() => this._operations--);
+    return p;
+  }
+
+  async SLD({sdp}) {
+    return this._chain(async () => {
+      const p = this._getPermission();
+      const b = new Promise((resolve, reject) => {
+        this._onSLDSuccess = resolve;
+        this._onSLDFailure = reject;
+        this._impl.sld(sdp);
+      });
+      await b;
+      await p;
+    });
+  }
+
+  async _getPermission() {
+    return new Promise(() => {});
+  }
+}
+
+const promiseState = p => Promise.race([
+  Promise.all([p, Promise.resolve()]).then(() => "fulfilled", () => "rejected"),
+  Promise.resolve().then(0).then(() => "pending")
+]);
+
+(async () => {
+  try {
+    const pc = new PC();
+    const p = pc.SLD({sdp: ""});
+    console.log(await promiseState(p));
+  } catch(e) {
+    console.log(e);
+  }
+})();
+
+</script>
+</pre>
+</body>
+</html>
