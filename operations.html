@@ -1,0 +1,28 @@
+<!DOCTYPE HTML>
+<html>
+<body>
+<div id="div"></div><br>
+<script>
+
+const console = { log: msg => div.innerHTML += msg + "<br>" };
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+const promiseState = p => Promise.race([
+  Promise.all([p, Promise.resolve()]).then(() => "fulfilled", () => "rejected"),
+  Promise.resolve().then(0).then(0).then(0).then(0).then(0).then(() => "pending")
+]);
+
+(async () => {
+  try {
+    const pc = new RTCPeerConnection();
+    const p = pc.setLocalDescription({type: "offer", sdp: "blah"});
+    console.log(await promiseState(p));
+  } catch(e) {
+    console.log(e);
+  }
+})();
+
+</script>
+</pre>
+</body>
+</html>
