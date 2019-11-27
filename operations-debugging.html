@@ -7,6 +7,13 @@
 const console = { log: msg => div.innerHTML += msg + "<br>" };
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+const promiseState = p => Promise.race([
+  Promise.all([p, Promise.resolve()]).then(() => "fulfilled", () => "rejected"),
+  Promise.resolve().then(0).then(() => "pending")
+]);
+
+const dumpPromiseState = p  => (async () => console.log(await promiseState(p)))();
+
 class PC {
   constructor() {
     this.operations = 0;
@@ -39,6 +46,7 @@ class PC {
         this._onSLDFailure = reject;
         this._impl.sld(sdp);
       });
+      dumpPromiseState(b);
       await b;
       await p;
     });
@@ -49,16 +57,11 @@ class PC {
   }
 }
 
-const promiseState = p => Promise.race([
-  Promise.all([p, Promise.resolve()]).then(() => "fulfilled", () => "rejected"),
-  Promise.resolve().then(0).then(() => "pending")
-]);
-
 (async () => {
   try {
     const pc = new PC();
     const p = pc.SLD({sdp: ""});
-    console.log(await promiseState(p));
+    dumpPromiseState(p);
   } catch(e) {
     console.log(e);
   }
