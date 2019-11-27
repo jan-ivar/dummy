@@ -16,15 +16,15 @@ const dumpPromiseState = p  => (async () => console.log(await promiseState(p)))(
 
 async function foo() {
   return (async () => {
-    const b = Promise.reject();
+    const a = Promise.reject();
     dumpPromiseState(b);
-    await b;
+    await a;
   })();
 }
 
 (async () => {
-  const p = foo();
-  dumpPromiseState(p);
+  const b = foo();
+  dumpPromiseState(b);
 })();
 
 </script>
