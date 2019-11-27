@@ -1,0 +1,33 @@
+<!DOCTYPE HTML>
+<html>
+<body>
+<div id="div"></div><br>
+<script>
+
+const console = { log: msg => div.innerHTML += msg + "<br>" };
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+const promiseState = p => Promise.race([
+  Promise.all([p, Promise.resolve()]).then(() => "fulfilled", () => "rejected"),
+  Promise.resolve().then(0).then(() => "pending")
+]);
+
+const dumpPromiseState = p  => (async () => console.log(await promiseState(p)))();
+
+async function foo() {
+  return (async () => {
+    const b = Promise.reject();
+    dumpPromiseState(b);
+    await b;
+  })();
+}
+
+(async () => {
+  const p = foo();
+  dumpPromiseState(p);
+})();
+
+</script>
+</pre>
+</body>
+</html>
