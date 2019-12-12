@@ -7,7 +7,7 @@
 const console = { log: msg => div.innerHTML += msg + "<br>" };
 
 if (!navigator.mediaDevices.getDisplayMedia && navigator.getDisplayMedia) {
-  navigator.mediaDevices.getDisplayMedia = navigator.getDisplayMedia;
+  navigator.mediaDevices.getDisplayMedia = navigator.getDisplayMedia.bind(navigator);
 }
 
 async function gdm() {
