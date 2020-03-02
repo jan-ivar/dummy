@@ -8,7 +8,7 @@ const console = { log: msg => div.innerHTML += msg + "<br>" };
 
 button.onclick = async () => {
   try {
-    video.srcObject = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+    video.srcObject = await navigator.mediaDevices.getUserMedia({video: true});
   } catch(e) {
     console.log(e);
   }
