@@ -1,0 +1,87 @@
+<html>
+<meta charset=utf-8>
+<table><tr valign="top"><td><fieldset id="buttons">
+  <legend>Remote control:</legend>
+  <button onclick='transceiver = pc1.addTransceiver(trackA, {streams})'>transceiver = pc.addTransceiver(trackA, {streams})</button><br>
+  <button onclick='transceiver.direction = "recvonly"'>tranceiver.direction = "recvonly"</button><br>
+  <button onclick='transceiver.direction = "sendrecv"'>tranceiver.direction = "sendrecv"</button><br>
+  <button onclick='transceiver.sender.track.enabled = false'>transceiver.sender.track.enabled = false</button><br>
+  <button onclick='transceiver.sender.track.enabled = true'>transceiver.sender.track.enabled = true</button><br>
+  <button onclick='transceiver.sender.replaceTrack(trackB)'>transceiver.sender.replaceTrack(trackB)</button><br>
+  <button onclick='transceiver.sender.replaceTrack(trackA)'>transceiver.sender.replaceTrack(trackA)</button><br>
+  <button onclick='transceiver.sender.replaceTrack(null)'>transceiver.sender.replaceTrack(null)</button><br>
+  <button onclick='transceiver.stop()'>transceiver.stop()</button><br>
+</fieldset>
+  You can repeat the above sequence<br>
+<button onclick='trackA.stop();trackB.stop();buttons.disabled = true'>Stop Example</button><br>
+</td>
+<td>
+  <div id="div"></div>
+</td>
+<td>
+<video id="video" width="320" height="240" autoplay></video><br>
+</td>
+</tr></table>
+
+<script>
+let [pc1, pc2] = localPeerConnectionLoop(), transceiver, streams, trackA, trackB;
+
+pc2.ontrack = ({transceiver, streams: [stream]}) => {
+  log("pc.ontrack with transceiver and streams");
+
+  stream.onaddtrack = () => log("stream.onaddtrack");
+  stream.onremovetrack = () => log("stream.onremovetrack");
+  transceiver.receiver.track.onmute = () => log("transceiver.receiver.track.onmute");
+  transceiver.receiver.track.onended = () => log("transceiver.receiver.track.onended");
+  transceiver.receiver.track.onunmute = () => {
+    log("transceiver.receiver.track.onunmute");
+    video.srcObject = stream;
+  };
+};
+
+(async () => {
+  try {
+    pc1.createDataChannel("dummy");
+    await new Promise(r => pc1.onsignalingstatechange = () => pc1.signalingState == "stable" && r());
+    streams = [await navigator.mediaDevices.getUserMedia({video: true})];
+    trackA = streams[0].getTracks()[0];
+    trackB = whiteNoise();
+  } catch (e) {
+    log(e);
+  }
+})();
+
+function localPeerConnectionLoop(cfg = {sdpSemantics: 'unified-plan'}) {
+  const setD = (d, a, b) => Promise.all([a.setLocalDescription(d), b.setRemoteDescription(d)]);
+  return [0, 1].map(() => new RTCPeerConnection(cfg)).map((pc, i, pcs) => Object.assign(pc, {
+    onicecandidate: e => pcs[i ^ 1].addIceCandidate(e.candidate),
+    onnegotiationneeded: async e => {
+      try {
+        await setD(await pc.createOffer(), pc, pcs[i ^ 1]);
+        await setD(await pcs[i ^ 1].createAnswer(), pcs[i ^ 1], pc);
+      } catch (e) {
+        log(e);
+      }
+    }
+  }));
+}
+
+function whiteNoise() {
+  let canvas = Object.assign(document.createElement("canvas"), {width: 320, height: 240});
+  let ctx = canvas.getContext('2d');
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  let p = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  requestAnimationFrame(function draw(){
+    for (var i = 0; i < p.data.length; i++) {
+      p.data[i++] = p.data[i++] = p.data[i++] = Math.random() * 255;
+    }
+    ctx.putImageData(p, 0, 0);
+    requestAnimationFrame(draw);
+  });
+  return canvas.captureStream(60).getTracks()[0];
+}
+
+const log = msg => div.innerHTML += msg + "<br>";
+
+</script>
+</html>
