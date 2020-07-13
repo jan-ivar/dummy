@@ -11,8 +11,8 @@ async function gum() {
     video.srcObject = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
     for (const track of video.srcObject.getTracks()) {
       track.onended = () => console.log(`${track.kind} track ended`);
-      track.onmuted = () => console.log(`${track.kind} track muted`);
-      track.onunmuted = () => console.log(`${track.kind} track unmuted`);
+      track.onmute = () => console.log(`${track.kind} track muted`);
+      track.onunmute = () => console.log(`${track.kind} track unmuted`);
     }
   } catch(e) {
     console.log(e);
