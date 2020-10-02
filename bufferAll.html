@@ -12,7 +12,7 @@ const console = { log: msg => div.innerHTML += msg + "<br>" };
     await new Promise(r => src.onsourceopen = r);
     console.log(src.readyState); // open
     const sb = src.addSourceBuffer('video/mp4; codecs="avc1.42E01E, mp4a.40.2"');
-    sb.appendBuffer(await (await fetchOk("https://webrtc.github.io/samples/src/video/chrome.mp4")).arrayBuffer());
+    sb.appendBuffer(await (await fetchOk('frag_bunny.mp4')).arrayBuffer());
     await new Promise(r => sb.onupdateend = r);
     src.endOfStream();
     video.play();
