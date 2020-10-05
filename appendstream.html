@@ -4,7 +4,7 @@
 <video id="video" width="320" height="200" autoplay controls></video><br>
 <div id="div"></div>
 <script>
-//const console = { log: msg => div.innerHTML += msg + "<br>" };
+const console = { log: msg => div.innerHTML += msg + "<br>" };
 
 // sb.appendStream(readable) polyfill
 
@@ -24,8 +24,9 @@ MediaSource.prototype.addSourceBuffer = function(...args) {
           console.log(value);
           console.log("APPENDING...");
           sb.appendBuffer(value);
-          await new Promise(r => sb.addEventListener("updateend", r, {once:  true}));
           console.log("...APPENDED!");
+          await new Promise(r => sb.addEventListener("updateend", r, {once:  true}));
+          console.log("UPDATEEND!");
         }
       } catch (e) {
         console.log(e);
