@@ -13,7 +13,9 @@ button.onclick = async () => {
     await new Promise(r => src.onsourceopen = r);
     const sb = src.addSourceBuffer('video/mp4; codecs="avc1.42E01E, mp4a.40.2"');
     sb.appendBuffer(await (await fetchOk('frag_bunny.mp4')).arrayBuffer());
-    await new Promise(r => sb.onupdateend = r);
+    const p = await new Promise(r => sb.onupdateend = r);
+    await video.play();
+    await p;
     src.endOfStream();
     console.log(src.readyState); // ended
   } catch (e) {
