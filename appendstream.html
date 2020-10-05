@@ -11,22 +11,15 @@ const console = { log: msg => div.innerHTML += msg + "<br>" };
 const nativeAddSourceBuffer = MediaSource.prototype.addSourceBuffer;
 MediaSource.prototype.addSourceBuffer = function(...args) {
   const sb = nativeAddSourceBuffer.call(this, ...args);
-
   sb.appendStream = function(readable) {
-    console.log(readable);
     (async () => {
       const reader = readable.getReader();
       try {
         while (true) {
           const {value, done} = await reader.read();
-          console.log(done);
-          if (done) return;
-          console.log(value);
-          console.log("APPENDING...");
+          if (done) return; // TODO: notify client somehow?
           sb.appendBuffer(value);
-          console.log("...APPENDED!");
           await new Promise(r => sb.addEventListener("updateend", r, {once:  true}));
-          console.log("UPDATEEND!");
         }
       } catch (e) {
         console.log(e);
