@@ -1,0 +1,30 @@
+<html>
+<meta charset=utf-8>
+<video id="video" width="320" height="200" autoplay controls></video><br>
+<div id="div"></div>
+<script>
+const console = { log: msg => div.innerHTML += msg + "<br>" };
+  
+(async () => {
+  try {
+    const src = new MediaSource();
+    video.src = URL.createObjectURL(src);
+    await new Promise(r => src.onsourceopen = r);
+    const sb = src.addSourceBuffer('video/mp4; codecs="avc1.42E01E, mp4a.40.2"');
+    sb.appendBuffer(await (await fetchOk('frag_bunny.mp4')).arrayBuffer());
+    await new Promise(r => sb.onupdateend = r);
+    src.endOfStream();
+    console.log(src.readyState); // ended
+  } catch (e) {
+    console.log(e);
+  }
+})();
+
+async function fetchOk(...args) {
+  const res = await fetch(...args);
+  if (!res.ok) throw new Error((await res.json()).error_message);
+  return res;
+}
+
+</script>
+</html>
