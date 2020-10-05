@@ -6,7 +6,7 @@
 <script>
 const console = { log: msg => div.innerHTML += msg + "<br>" };
   
-(async () => {
+button.onclick = async () => {
   try {
     const src = new MediaSource();
     video.src = URL.createObjectURL(src);
@@ -19,7 +19,7 @@ const console = { log: msg => div.innerHTML += msg + "<br>" };
   } catch (e) {
     console.log(e);
   }
-})();
+};
 
 async function fetchOk(...args) {
   const res = await fetch(...args);
