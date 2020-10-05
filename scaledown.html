@@ -1,0 +1,125 @@
+
+
+<html>
+<meta charset=utf-8>
+<style id="compiled-css" type="text/css">
+  body { white-space: nowrap; font-family: monospace; }
+</style>
+
+Height <input id="heightNumber" type="number" min="2" max="1024" value="480" size="5"><input id="heightRange" type="range" min="2" max="1024" value="480">Max bitrate <input id="rateNumber" type="number" min="2" max="9000000" value="2000000" size="9">
+<input id="rateRange" type="range" min="2" max="9000000" value="2000000"><br><br>
+<table>
+  <tr>
+    <td>Receiver</td>
+    <td>Sender</td>
+  </tr>
+  <tr>
+    <td id="v2info">0x0</td>
+    <td id="v1info">0x0</td>
+  </tr>
+  <tr>
+    <td id="v2brinfo">0 bps</td>
+    <td id="v1brinfo">0 bps</td>
+  </tr>
+  <tr>
+    <td><video id="v2" autoplay></video></td>
+    <td><video id="v1" autoplay muted></video></td>
+  </tr>
+</table>
+<div id="div"></div>
+<script>
+const console = { log: msg => div.innerHTML += msg + "<br>" };
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+const update = (div, msg) => div.innerHTML = msg;
+
+const pc1 = new RTCPeerConnection(), pc2 = new RTCPeerConnection();
+
+heightRange.oninput = () => apply(heightNumber.value = heightRange.value, rateNumber.value);
+heightNumber.oninput = () => apply(heightRange.value = heightNumber.value, rateNumber.value);
+rateRange.oninput = () => apply(heightNumber.value, rateNumber.value = rateRange.value);
+rateNumber.oninput = () => apply(heightNumber.value, rateRange.value = rateNumber.value);
+
+let track, applying = false, height, range;
+
+async function apply(h, r) {
+  height = h;
+  rate = r;
+  if (applying) return;
+  try {
+    applying = true;
+    do {
+      h = height;
+      r = rate;
+      const [sender] = pc1.getSenders();
+      const ratio = sender.track.getSettings().height / height;
+      const params = sender.getParameters();
+      if (!params.encodings) params.encodings = [{}]; // Firefox workaround!
+      params.encodings[0].scaleResolutionDownBy = Math.max(ratio, 1);
+      params.encodings[0].maxBitrate = rate;
+      await sender.setParameters(params);
+    } while (h != height);
+  } catch (e) {
+    console.log(e);
+  } finally {
+    applying = false;
+  }
+}
+
+(async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({video: {height: 480}});
+    await setVideo(v1, v1info, stream);
+    const sender = pc1.addTrack(stream.getVideoTracks()[0], stream);
+    await new Promise(r => pc1.oniceconnectionstatechange =
+        () => pc1.iceConnectionState == "connected" && r());
+    heightRange.max = heightNumber.max = sender.track.getSettings().height;
+    heightRange.value = heightNumber.value = heightNumber.max * 3 / 4;
+    apply(heightNumber.value, rateNumber.value);
+  } catch (e) {
+    console.log(e);
+  }
+})();
+
+const dimensions = v => v.videoWidth +"x"+ v.videoHeight;
+const bitrate = (n, o) => (n - (o.old || 0)) * 8 + (o.old = n) * 0;
+
+async function setVideo(v, vinfo, stream) {
+  v.srcObject = stream;
+  await new Promise(r => v.onloadedmetadata = r);
+  setInterval(() => update(vinfo, dimensions(v)), 1000);
+}
+
+const is = (stat, type) => stat.type == type;
+const findStat = (map, type) => [...map.values()].find(stat => is(stat, type));
+
+const add = (pc, can) => can && pc.addIceCandidate(can).catch(e => console.log(e));
+pc1.onicecandidate = e => add(pc2, e.candidate);
+pc2.onicecandidate = e => add(pc1, e.candidate);
+pc2.ontrack = async e => {
+  await setVideo(v2, v2info, e.streams[0]);
+  let o1 = {}, o2 = {};
+  setInterval(async () => {
+    try {
+      let [s1, s2] = await Promise.all([pc1, pc2].map(pc => pc.getStats()));
+      s1 = findStat(s1, "outbound-rtp");
+      s2 = findStat(s2, "inbound-rtp");
+      update(v1brinfo, `${bitrate(s1.bytesSent, o1).toLocaleString()} bps`);
+      update(v2brinfo, `${bitrate(s2.bytesReceived, o2).toLocaleString()} bps`);
+    } catch (e) {
+      console.log(e);
+    }
+  }, 1000);
+};
+
+pc1.onnegotiationneeded = async e => {
+  try {
+    await pc1.setLocalDescription(await pc1.createOffer());
+    await pc2.setRemoteDescription(pc1.localDescription);
+    await pc2.setLocalDescription(await pc2.createAnswer());
+    await pc1.setRemoteDescription(pc2.localDescription);
+  } catch (e) {
+    console.log(e);
+  }
+};
+</script>
+</html>
