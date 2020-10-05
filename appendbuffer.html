@@ -25,7 +25,7 @@ button.onclick = async () => {
 
 async function fetchOk(...args) {
   const res = await fetch(...args);
-  if (!res.ok) throw new Error((await res.json()).error_message);
+  if (!res.ok) throw new Error(await res.text());
   return res;
 }
 
