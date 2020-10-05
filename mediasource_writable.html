@@ -1,0 +1,49 @@
+<html>
+<meta charset=utf-8>
+<button id="button">User gesture</button><br>
+<video id="video" width="320" height="200" autoplay controls></video><br>
+<div id="div"></div>
+<script>
+const console = { log: msg => div.innerHTML += msg + "<br>" };
+
+// Polyfill mediaSource.writable
+
+const nativeAddSourceBuffer = MediaSource.prototype.addSourceBuffer;
+MediaSource.prototype.addSourceBuffer = function(...args) {
+  const src = this;
+  const sb = nativeAddSourceBuffer.call(src, ...args);
+  sb.writable = new WritableStream({
+    write(chunk) {
+      sb.appendBuffer(chunk);
+      return new Promise(r => sb.addEventListener('updateend', r, {once: true}));
+    },
+    close() {
+      src.endOfStream();
+    }
+  });
+  return sb;
+};
+
+// End of polyfill ^
+
+button.onclick = async () => {
+  try {
+    const src = new MediaSource();
+    video.src = URL.createObjectURL(src);
+    await new Promise(r => src.onsourceopen = r);
+    const sb = src.addSourceBuffer('video/mp4; codecs="avc1.42E01E, mp4a.40.2"');
+    (await fetchOk('frag_bunny.mp4')).body.pipeTo(sb.writable);
+    await video.play();
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+async function fetchOk(...args) {
+  const res = await fetch(...args);
+  if (!res.ok) throw new Error(await res.text());
+  return res;
+}
+
+</script>
+</html>
