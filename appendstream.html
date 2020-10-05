@@ -1,0 +1,66 @@
+<html>
+<meta charset=utf-8>
+<button id="button">User gesture</button><br>
+<video id="video" width="320" height="200" autoplay controls></video><br>
+<div id="div"></div>
+<script>
+//const console = { log: msg => div.innerHTML += msg + "<br>" };
+
+// sb.appendStream(readable) polyfill
+
+const nativeAddSourceBuffer = MediaSource.prototype.addSourceBuffer;
+MediaSource.prototype.addSourceBuffer = function(...args) {
+  const sb = nativeAddSourceBuffer.call(this, ...args);
+
+  sb.appendStream = function(readable) {
+    console.log(readable);
+    (async () => {
+      const reader = readable.getReader();
+      try {
+        while (true) {
+          const {value, done} = await reader.read();
+          console.log(done);
+          if (done) return;
+          console.log(value);
+          console.log("APPENDING...");
+          sb.appendBuffer(value);
+          await new Promise(r => sb.addEventListener("updateend", r, {once:  true}));
+          console.log("...APPENDED!");
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    })();
+  }
+  return sb;
+};
+
+// end of polyfill ^
+
+button.onclick = async () => {
+  try {
+    const src = new MediaSource();
+    video.src = URL.createObjectURL(src);
+    await new Promise(r => src.onsourceopen = r);
+    console.log(src.readyState);
+    const sb = src.addSourceBuffer('video/mp4; codecs="avc1.42E01E, mp4a.40.2"');
+    sb.onupdateend = () => console.log("UPDATEEND event");
+    sb.appendStream((await fetchOk('frag_bunny.mp4')).body);
+    console.log(src.readyState);
+    await video.play();
+//    await new Promise(r => sb.onupdateend = r);
+//    src.endOfStream();
+//    console.log(src.readyState); // ended
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+async function fetchOk(...args) {
+  const res = await fetch(...args);
+  if (!res.ok) throw new Error((await res.json()).error_message);
+  return res;
+}
+
+</script>
+</html>
