@@ -1,0 +1,44 @@
+<html>
+<meta charset=utf-8>
+<video id="video1" height="120" width="160" autoplay muted></video>
+<video id="video2" height="120" width="160" autoplay controls></video><br>
+<div id="div"></div><br>
+<a id="link"></a>
+<script>
+
+const console = { log: msg => div.innerHTML += msg + "<br>" };
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+(async (seconds = 10) => {
+  try {
+    video1.srcObject = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+    await new Promise(r => video1.onloadedmetadata = r);
+    console.log(`Recording ${seconds} seconds`);
+    const blob = await record(video1.srcObject, seconds * 1000);
+    for (const track of video1.srcObject.getTracks()) {
+      track.stop();
+    }
+    video2.src = link.href = URL.createObjectURL(blob);
+    link.download = "recording.webm";
+    link.textContent = "Download recording";
+    console.log("Playing "+ blob.type +" recording");
+  } catch (e) {
+    console.log(e);
+  }
+})();
+
+async function record(stream, ms) {
+  const rec = new MediaRecorder(stream), data = [];
+  rec.ondataavailable = e => data.push(e.data);
+  rec.start();
+  let stopped = new Promise((resolve, reject) => {
+    rec.onstop = resolve;
+    rec.onerror = e => reject(e.error);
+  });
+  await new Promise(r => rec.onstart = r);
+  await Promise.all([stopped, wait(ms).then(() => rec.stop())]);
+  return new Blob(data, {type: data[0].type});
+}
+
+</script>
+</html>
