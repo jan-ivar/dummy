@@ -1,0 +1,15 @@
+<html>
+<meta charset=utf-8>
+<div id="div"></div>
+<script>
+const console = { log: msg => div.innerHTML += msg + "<br>" };
+
+window.onfocus = () => console.log("FOCUS");
+window.onblur = () => console.log("BLUR");
+document.visibilitychange = () => console.log(document.visibilityState.toUpperCase());
+
+setInterval(() => console.log(`${document.hasFocus()? "has" : "no "} focus, ${document.visibilityState}`), 1000);
+
+
+</script>
+</html>
