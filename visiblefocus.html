@@ -6,7 +6,7 @@ const console = { log: msg => div.innerHTML += msg + "<br>" };
 
 window.onfocus = () => console.log("FOCUS");
 window.onblur = () => console.log("BLUR");
-document.visibilitychange = () => console.log(document.visibilityState.toUpperCase());
+document.onvisibilitychange = () => console.log(document.visibilityState.toUpperCase());
 
 setInterval(() => console.log(`${document.hasFocus()? "has" : "no "} focus, ${document.visibilityState}`), 1000);
 
