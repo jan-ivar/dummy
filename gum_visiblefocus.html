@@ -13,12 +13,14 @@ const info = () => `${document.hasFocus()? "has" : "no "} focus, ${document.visi
 
 (async (seconds = 5) => {
   try {
+    console.log(`Waiting ${seconds} seconds to start, in case you want to tab away.`);
+    await wait(seconds * 1000);
     while (true) {
       console.log(info());
       const p = navigator.mediaDevices.getUserMedia({video: true});
       console.log(`Waiting ${seconds} seconds for camera access...`);
       const stream = await Promise.race([p, wait(seconds * 1000)]);
-      console.log(`...Camera access ${stream? "granted" : "delayed"}`);
+      console.log(`...Camera access ${stream? "GRANTED" : "DELAYED"}`);
       console.log(info());
       if (stream) {
         stream.getTracks()[0].stop();
