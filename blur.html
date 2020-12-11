@@ -1,11 +1,24 @@
 <html>
 <meta charset=utf-8>
+<input id="input">
 <div id="div"></div>
 <script>
 const console = { log: msg => div.innerHTML += msg + "<br>" };
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 (async () => {
+  // This test requires the document to have focus as a starting condition.
+  // Whether a newly loaded page receives focus or not, seems to be somewhat
+  // browser-dependent and situation-dependent. For instance, Firefox appears to
+  // focus the page immediately if the page was loaded with the refresh button,
+  // but not if it was loaded from pressing ENTER in the URL bar. To ensure a
+  // reliable starting condition for this test, we give an extra push for focus.
+  if (!document.hasFocus()) {
+    const input = document.getElementById("input");
+    input.focus();
+    await new Promise(r => input.onfocus = r);
+  }
+
   console.log(document.hasFocus());
   window.onblur = () => console.log("error: BLUR");
   if (!document.hasFocus()) {
