@@ -1,0 +1,124 @@
+<html>
+<meta charset=utf-8>
+  
+<div style="display:inline-block;">
+<video id="video1" autoplay controls style="width:160px;height:120px;"></video>
+<br/>
+<button id="start1Btn" onclick="start1()">Request Cam 1</button>
+<br/>
+<button id="stop1Btn" onclick="stop1()" disabled>Stop Cam 1</button>
+</div>
+
+<div style="display:inline-block;">
+<video id="video2" autoplay controls style="width:160px;height:120px;"></video>
+<br/>
+<button id="start2Btn" onclick="start2()">Request Cam 2</button>
+<br/>
+<button id="stop2Btn" onclick="stop2()" disabled>Stop Cam 2</button>
+</div>
+
+<div style="display:inline-block;">
+<video id="video3" autoplay controls style="width:160px;height:120px;"></video>
+<br/>
+<button id="start3Btn" onclick="start3()">Request any</button>
+<br/>
+<button id="stop3Btn" onclick="stop3()" disabled>Stop same</button>
+</div>
+
+<div id="div"></div>
+<script>
+const console = { log: msg => div.innerHTML += msg + "<br>" };
+
+let deviceId1, deviceId2;
+
+async function start(video, startBtn, stopBtn, deviceId) {
+  if (video.srcObject) {
+    console.error("video1 already has a stream !");
+    return;
+  }
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video: {deviceId: deviceId? {exact: deviceId} : undefined }
+  });
+  if (video.srcObject) {
+    console.error("video1 already has a stream !");
+    for (let track of stream.getTracks()) {
+      track.stop();
+    }
+    return;
+  }
+  video.srcObject = stream;
+  if (!deviceId1) {
+    deviceId1 = deviceId2 = stream.getVideoTracks()[0].getSettings().deviceId;
+  }
+  if (deviceId2 == deviceId1) {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    for (const {deviceId} of devices.filter(({kind}) => kind == "videoinput")) {
+      if (deviceId != deviceId1) {
+        deviceId2 = deviceId;
+        break;
+      }
+    }
+  }
+  startBtn.setAttribute("disabled", "");
+  stopBtn.removeAttribute("disabled");
+}
+
+function stop(video, startBtn, stopBtn) {
+  if (!video.srcObject) {
+    console.error("video1 has no stream !");
+    return;
+  }
+  for (let track of video.srcObject.getTracks()) {
+    track.stop();
+  }
+  video.srcObject = null;
+  startBtn.removeAttribute("disabled");
+  stopBtn.setAttribute("disabled", "");
+}
+
+function start1() {
+  return start(
+    document.getElementById("video1"),
+    document.getElementById("start1Btn"),
+    document.getElementById("stop1Btn"),
+    deviceId1);
+}
+
+function stop1() {
+  return stop(
+    document.getElementById("video1"),
+    document.getElementById("start1Btn"),
+    document.getElementById("stop1Btn"));
+}
+
+function start2() {
+  return start(
+    document.getElementById("video2"),
+    document.getElementById("start2Btn"),
+    document.getElementById("stop2Btn"),
+    deviceId2);
+}
+
+function stop2() {
+  return stop(
+    document.getElementById("video2"),
+    document.getElementById("start2Btn"),
+    document.getElementById("stop2Btn"));
+}
+
+function start3() {
+  return start(
+    document.getElementById("video3"),
+    document.getElementById("start3Btn"),
+    document.getElementById("stop3Btn"));
+}
+
+function stop3() {
+  return stop(
+    document.getElementById("video3"),
+    document.getElementById("start3Btn"),
+    document.getElementById("stop3Btn"));
+}
+  
+</script>
+</html>
