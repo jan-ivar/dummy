@@ -1,0 +1,26 @@
+<html>
+<meta charset=utf-8>
+<button id="button">Close remote</button>
+<div id="div"></div>
+<script>
+const console = { log: msg => div.innerHTML += msg + "<br>" };
+
+const pc1 = new RTCPeerConnection(), pc2 = new RTCPeerConnection();
+
+const dc1 = pc1.createDataChannel("");
+dc1.onopen = () => console.log("open");
+dc1.onclose = () => console.log("remote closed");
+button.onclick = () => pc2.close();
+
+pc1.onnegotiationneeded = async () => {
+  await pc1.setLocalDescription(await pc1.createOffer());
+  await pc2.setRemoteDescription(pc1.localDescription);
+  await pc2.setLocalDescription(await pc2.createAnswer());
+  await pc1.setRemoteDescription(pc2.localDescription);
+};
+pc1.onicecandidate = e => pc2.addIceCandidate(e.candidate);
+pc2.onicecandidate = e => pc1.addIceCandidate(e.candidate);
+pc2.oniceconnectionstatechange = () => console.log(pc2.iceConnectionState);
+
+</script>
+</html>
