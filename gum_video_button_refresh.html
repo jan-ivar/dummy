@@ -1,0 +1,21 @@
+<html>
+<meta charset=utf-8>
+<div id="div"></div>
+<button id="button">Camera</button><br>
+<button id="reload">Refresh page</button><br>
+<video id="video" width="320" height="200" autoplay></video><br>
+<script>
+const console = { log: msg => div.innerHTML += msg + "<br>" };
+
+button.onclick = async () => {
+  try {
+    video.srcObject = await navigator.mediaDevices.getUserMedia({video: true});
+  } catch(e) {
+    console.log(e);
+  }
+};
+
+reload.onclick = () => location.reload();
+
+</script>
+</html>
