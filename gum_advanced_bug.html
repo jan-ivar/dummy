@@ -1,0 +1,30 @@
+<html>
+<meta charset=utf-8>
+<div id="div"></div>
+<button id="button" hidden>User gesture</button><br>
+<video id="video" width="320" height="200" autoplay></video><br>
+<script>
+const console = { log: msg => div.innerHTML += msg + "<br>" };
+
+(async () => {
+  try {
+    video.srcObject = await navigator.mediaDevices.getUserMedia({
+      video: {
+        advanced: [
+          {width: 1280},
+          {height: 720},
+          {width: 1024},
+          {height: 576},
+          {width: 640},
+          {height: 360}
+        ]
+      }
+    });
+
+  } catch (e) {
+    console.log(e);
+  }
+})();
+
+</script>
+</html>
