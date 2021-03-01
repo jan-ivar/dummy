@@ -27,7 +27,8 @@
 
 <div id="div"></div>
 <script>
-const console = { log: msg => div.innerHTML += msg + "<br>" };
+const console = {log: msg => div.innerHTML += `${msg}<br>`,
+                 error: e => console.log(`${e.name}: ${e.message}`)};
 
 let deviceId1, deviceId2;
 
