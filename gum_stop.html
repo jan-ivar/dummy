@@ -1,0 +1,58 @@
+<html>
+<meta charset=utf-8>
+<video id="video" height="120" autoplay></video><br>
+<button id="gum_audio">Start Mic!</button>
+<button id="gum_video">Start Cam!</button>
+<button id="gum_both">Start Both!</button>
+<button id="stopall">Stop!</button>
+<button id="stopmics">Stop Mics!</button>
+<button id="stopcams">Stop Cams!</button>
+<button id="list">Enumerate Devices!</button>
+<label><input type="checkbox" id="muted">Face-muted</label>
+<div id="div"><br></div>
+<script>
+const log = msg => div.innerHTML += `${msg}<br>`;
+let unstoppedCams = [], unstoppedMics = [];
+
+async function gum(constraints) {
+  try {
+    video.srcObject = await navigator.mediaDevices.getUserMedia(constraints);
+    unstoppedCams.push(...video.srcObject.getVideoTracks());
+    unstoppedMics.push(...video.srcObject.getAudioTracks());
+  } catch (e) {
+    log(e);
+  }
+}
+
+gum_audio.onclick = () => gum({audio: true});
+gum_video.onclick = () => gum({video: true});
+gum_both.onclick = () => gum({video: true, audio: true});
+
+stopall.onclick = () => {
+  stopmics.onclick();
+  stopcams.onclick();
+};
+
+stopmics.onclick = () => {
+  while(unstoppedMics.length) unstoppedMics.pop().stop();
+};
+
+stopcams.onclick = () => {
+  while(unstoppedCams.length) unstoppedCams.pop().stop();
+};
+
+muted.onclick = () => {
+  video.srcObject.getTracks().forEach(track => track.enabled = !muted.checked);
+};
+
+list.onclick = async () => {
+  let devices = await navigator.mediaDevices.enumerateDevices();
+  log(devices.length + " devices.");
+  for (let {kind, label, deviceId, groupId} of devices) {
+    log(`${kind}: ${label} id=${deviceId} group=${groupId}`);
+  }
+}
+
+navigator.mediaDevices.ondevicechange = () => log("device change!");
+</script>
+</html>
