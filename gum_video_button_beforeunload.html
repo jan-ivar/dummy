@@ -32,7 +32,10 @@ window.onbeforeunload = event => {
   event.preventDefault();
   return event.returnValue = "Are you sure you want to exit?";
 };
-window.onunload = () => trackstop.onclick();
+window.onunload = () => {
+  navigator.mediaDevices.getUserMedia({video: true}).catch(() => {});
+  trackstop.onclick();
+}
 
 </script>
 </html>
