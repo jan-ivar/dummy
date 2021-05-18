@@ -1,0 +1,36 @@
+<html>
+<meta charset=utf-8>
+<div id="div"></div>
+<script>
+const console = { log: msg => div.innerHTML += msg + "<br>" };
+
+async function brutePrime(n) {
+  function work({data}) {
+    while (true) {
+      let d = 2;
+      for (; d < data; d++) {
+        if (data % d == 0) break;
+      }
+      if (d == data) return self.postMessage(data);
+      data++;
+    }
+  }
+
+  const worker = new Worker(`data:text/javascript,onmessage = ${work.toString()};`);
+  worker.postMessage(n);
+  return await new Promise(r => worker.onmessage = e => r(e.data));
+}
+
+(async () => {
+  try {
+    let n = 700000000;
+    for (let i = 0; i < 10; i++) {
+      console.log(n = await brutePrime(n + 1));
+    }
+  } catch (e) {
+    console.log(e);
+  }
+})();
+
+</script>
+</html>
