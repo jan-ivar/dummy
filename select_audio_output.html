@@ -1,0 +1,39 @@
+<html>
+<meta charset=utf-8>
+Speaker: <button id="speaker">Pick one</button><br>
+<video id="video" width="160" height="120" autoplay controls></video><br>
+<div id="div"></div>
+<script>
+
+const console = { log: msg => div.innerHTML += msg + "<br>" };
+const dump = f => console.log(`${f.toString().slice(6)} = ${JSON.stringify(f())}`);
+let stream;
+
+(async () => {
+  try {
+    if (!("setSinkId" in video)) return console.log("No setSinkId");
+//    video.srcObject = new MediaStream([tone()]);
+  } catch(e) {
+    console.log(e);
+  }
+})();
+
+speaker.onclick = async () => {
+  try {
+    console.log("HERE")
+    const deviceId = await navigator.mediaDevices.selectAudioOutput();
+    await video.setSinkId(deviceId);
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+function tone() {
+  const ctx = new AudioContext(), oscillator = ctx.createOscillator();
+  const dst = oscillator.connect(ctx.createMediaStreamDestination());
+  oscillator.start();
+  return dst.stream.getAudioTracks()[0];
+}
+
+</script>
+</html>
