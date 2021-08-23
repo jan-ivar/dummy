@@ -5,13 +5,14 @@
 <script>
 const console = { log: msg => div.innerHTML += msg + "<br>" };
 
-onmessage = () => {
+onmessage = async () => {
   try {
     video.srcObject = await navigator.mediaDevices.getDisplayMedia({video: true});
     console.log(video.srcObject.getVideoTracks()[0].label);
   } catch(e) {
     console.log(e);
   }
-}
+};
+
 </script>
 </html>
