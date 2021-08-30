@@ -11,8 +11,10 @@ let stream;
 
 (async () => {
   try {
-    if (!("setSinkId" in video)) return console.log("No setSinkId");
-//    video.srcObject = new MediaStream([tone()]);
+    if (!("setSinkId" in video)) {
+      return console.log("No setSinkId");
+    }
+    video.srcObject = new MediaStream([tone()]);
   } catch(e) {
     console.log(e);
   }
@@ -20,7 +22,6 @@ let stream;
 
 speaker.onclick = async () => {
   try {
-    console.log("HERE")
     const deviceId = await navigator.mediaDevices.selectAudioOutput();
     await video.setSinkId(deviceId);
   } catch (e) {
