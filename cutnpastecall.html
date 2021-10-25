@@ -1,0 +1,59 @@
+<!DOCTYPE HTML>
+<html>
+<body>
+  <video id="video1" width="160" height="120" autoplay muted></video>
+  <video id="video2" width="160" height="120" autoplay></video><br>
+  <button id="button">Offer:</button>
+  <textarea id="offer" placeholder="Paste offer here"></textarea><br>
+  Answer: <textarea id="answer"></textarea><br><div id="div"></div>
+  <div id="div"></div><br>
+<script>
+
+const console = { log: msg => div.innerHTML += msg + "<br>" };
+const config = {iceServers: [{urls: "stun:stun.l.google.com:19302"}]};
+const pc = new RTCPeerConnection(config);
+
+(async () => {
+  video1.srcObject = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
+  for (track of video1.srcObject.getTracks()) {
+    pc.addTrack(track, video1.srcObject);
+  }
+})();
+
+pc.oniceconnectionstatechange = e => console.log(pc.iceConnectionState);
+pc.ontrack = ({streams: [stream]}) => video2.srcObject = stream;
+
+button.onclick = async () => {
+  button.disabled = true;
+  await pc.setLocalDescription(await pc.createOffer());
+  pc.onicecandidate = ({candidate}) => {
+    if (candidate) return;
+    offer.value = pc.localDescription.sdp;
+    offer.select();
+    answer.placeholder = "Paste answer here";
+  };
+};
+
+offer.onkeypress = async ({keyCode}) => {
+  if (keyCode != 13 || pc.signalingState != "stable") return;
+  button.disabled = offer.disabled = true;
+  await pc.setRemoteDescription({type: "offer", sdp: offer.value});
+  await pc.setLocalDescription(await pc.createAnswer());
+  pc.onicecandidate = ({candidate}) => {
+    if (candidate) return;
+    answer.focus();
+    answer.value = pc.localDescription.sdp;
+    answer.select();
+  };
+};
+
+answer.onkeypress = async ({keyCode}) => {
+  if (keyCode != 13 || pc.signalingState != "have-local-offer") return;
+  answer.disabled = true;
+  await pc.setRemoteDescription({type: "answer", sdp: answer.value});
+};
+
+</script>
+</pre>
+</body>
+</html>
