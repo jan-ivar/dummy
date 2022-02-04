@@ -11,11 +11,10 @@ button.onclick = async () => {
   try {
     let [stream, permission] = await Promise.all([
       navigator.mediaDevices.getUserMedia({video: true, audio: true}),
-      navigator.permissions.query({name: "notifications"})
+      Notification.requestPermission()
     ]);
     video.srcObject = stream;
-    console.log(`notification query: ${permission.state}`);
-    permission.onchange = () => console.log("onchange!");
+    console.log(`notification request: ${permission}`);
 
     await dumpState();
     await wait(5000);
