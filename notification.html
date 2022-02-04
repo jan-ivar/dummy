@@ -1,7 +1,6 @@
 <html>
 <meta charset=utf-8>
-<video id="video" width="320" height="200" autoplay muted></video><br>
-<button id="button">Join meeting (not really)</button>
+<button id="button">Ask for notification permission</button>
 <div id="div"></div>
 <script>
 const console = {log: msg => div.innerHTML += `${msg}<br>`};
@@ -9,11 +8,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
 
 button.onclick = async () => {
   try {
-    const [stream, permission] = await Promise.all([
-      navigator.mediaDevices.getUserMedia({video: true, audio: true}),
-      Notification.requestPermission()
-    ]);
-    video.srcObject = stream;
+    const permission = await Notification.requestPermission();
     console.log(`notification request: ${permission}`);
     let notification = new Notification("Hi there!");
     await dumpState();
