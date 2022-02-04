@@ -2,27 +2,34 @@
 <meta charset=utf-8>
 <video id="video" width="320" height="200" autoplay muted></video><br>
 <button id="button">Join meeting (not really)</button>
-<div id="div" style="white-space: pre;"></div>
+<div id="div"></div>
 <script>
 const console = {log: msg => div.innerHTML += `${msg}<br>`};
-const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+const wait = ms => new Promise(r => setTimeout(r, ms));
 
 button.onclick = async () => {
   try {
-    const [stream, perm] = await Promise.all([
+    let [stream, permission] = await Promise.all([
       navigator.mediaDevices.getUserMedia({video: true, audio: true}),
       navigator.permissions.query({name: "notifications"})
     ]);
     video.srcObject = stream;
-    console.log(`notification query: ${perm.state}`);
-    perm.onchange = () => console.log("onchange!");
+    console.log(`notification query: ${permission.state}`);
+    permission.onchange = () => console.log("onchange!");
 
-    let notification = new Notification("Hi there!");
+    await dumpState();
     await wait(5000);
     notification = new Notification("Am I bugging you?");
+    await dumpState();
   } catch(e) {
     console.log(e);
   }
 };
+
+async function dumpState() {
+  const {state} = await navigator.permissions.query({name: "notifications"});
+  console.log(`notification query: ${state}`);
+}
+
 </script>
 </html>
