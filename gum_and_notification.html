@@ -9,7 +9,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
 
 button.onclick = async () => {
   try {
-    let [stream, permission] = await Promise.all([
+    const [stream, permission] = await Promise.all([
       navigator.mediaDevices.getUserMedia({video: true, audio: true}),
       Notification.requestPermission()
     ]);
