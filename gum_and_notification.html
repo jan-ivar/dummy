@@ -15,7 +15,7 @@ button.onclick = async () => {
     ]);
     video.srcObject = stream;
     console.log(`notification request: ${permission}`);
-
+    let notification = new Notification("Hi there!");
     await dumpState();
     await wait(5000);
     notification = new Notification("Am I bugging you?");
