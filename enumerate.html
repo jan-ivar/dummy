@@ -7,6 +7,7 @@
 <button id="gum_both">Start Both!</button>
 <button id="gdm_video">Present!</button>
 <button id="stopp">Stop!</button>
+<button id="speakers">Switch speakers!</button>
 <button id="list">Enumerate Devices!</button>
 <label><input type="checkbox" id="muted">Face-muted</label>
 <div id="div"><br></div>
@@ -48,6 +49,16 @@ stopp.onclick = () => {
   unstopped.forEach(track => track.stop());
   unstopped = [];
 };
+
+speakers.onclick = async () => {
+  try {
+    const {deviceId, label} = await navigator.mediaDevices.selectAudioOutput();
+    console.log(`Switching speakers to ${label}`);
+    await video1.setSinkId(deviceId);
+  } catch (e) {
+    log(e);
+  }
+}
 
 muted.onclick = () => {
   video1.srcObject.getTracks().forEach(track => track.enabled = !muted.checked);
