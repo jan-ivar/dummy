@@ -1,6 +1,6 @@
 <html>
 <meta charset=utf-8>
-Audio Output Device: <button id="speaker">&lt;Default speakers&gt;</button><br>
+Audio Output Device: <button id="speakers">&lt;Default speakers&gt;</button><br>
 <video id="video" width="160" height="120" controls></video><br>
 <div id="div"></div>
 <script>
@@ -20,7 +20,7 @@ let stream;
   }
 })();
 
-speaker.onclick = async () => {
+speakers.onclick = async () => {
   try {
     const {deviceId, label} = await navigator.mediaDevices.selectAudioOutput();
     console.log(`Switching to ${label}`);
