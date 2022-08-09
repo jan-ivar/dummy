@@ -10,6 +10,7 @@ const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 camera.onclick = async () => {
   try {
+    console.log("Turning camera on in 5 seconds.");
     await wait(5000);
     video.srcObject = await navigator.mediaDevices.getUserMedia({video: {height: 9999}, audio: true});
   } catch(e) {
