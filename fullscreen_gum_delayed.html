@@ -21,7 +21,7 @@ camera.onclick = async () => {
 fullscreen.onclick = async () => {
   try {
     await document.body.requestFullscreen();
-    await wait(10000);
+    await wait(20000);
     document.exitFullscreen();
   } catch (e) {
     console.log(e);
