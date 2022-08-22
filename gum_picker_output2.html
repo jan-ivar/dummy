@@ -56,8 +56,8 @@ microphone.onchange = async () => {
     track = (await replaceUserMedia(constraints, track)).getAudioTracks()[0];
     video.srcObject = new MediaStream([track, ...video.srcObject.getVideoTracks()]);
   } catch (e) {
-    updateSelectors();
     console.log(e);
+    updateSelectors();
   }
 };
 
@@ -68,8 +68,8 @@ camera.onchange = async () => {
     track = (await replaceUserMedia(constraints, track)).getVideoTracks()[0];
     video.srcObject = new MediaStream([track, ...video.srcObject.getAudioTracks()]);
   } catch (e) {
-    updateSelectors();
     console.log(e);
+    updateSelectors();
   }
 };
 
@@ -85,10 +85,10 @@ speakers.onchange = async () => {
     }
     console.log(`Switching to ${label}`);
     await video.setSinkId(deviceId);
-    speakers.innerText = label;
     updateSelectors();
   } catch (e) {
     console.log(e);
+    updateSelectors();
   }
 };
 
