@@ -83,7 +83,7 @@ speakers.onchange = async () => {
     if (deviceId == "other") {
       ({deviceId, label} = await navigator.mediaDevices.selectAudioOutput({deviceId}));
     }
-    console.log(`Switching to ${label || "default"}`);
+    console.log(`Switching to ${label}`);
     await video.setSinkId(deviceId);
     speakers.innerText = label;
     updateSelectors();
