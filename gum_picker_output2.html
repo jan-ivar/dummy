@@ -76,6 +76,10 @@ camera.onchange = async () => {
 speakers.onchange = async () => {
   try {
     let label = "", deviceId = speakers.value;
+
+    for (const option of speakers.options) {
+      if (speakers.value == option.value) label = option.innerText;
+    }
     if (deviceId == "other") {
       ({deviceId, label} = await navigator.mediaDevices.selectAudioOutput({deviceId}));
     }
@@ -91,12 +95,9 @@ speakers.onchange = async () => {
 navigator.mediaDevices.ondevicechange = () => updateSelectors();
 
 async function updateSelectors() {
-  const selectedIds = [
-    ...(video.srcObject?.getTracks() || []).map(t => t.getSettings().deviceId),
-    video.sinkId
-  ];
-
   try {
+    const selectedIds = (video.srcObject?.getTracks() || []).map(t => t.getSettings().deviceId);
+
     const devices = await navigator.mediaDevices.enumerateDevices();
 
     for (const [s, kind, name] of [[camera, "videoinput", "Camera"],
@@ -122,6 +123,7 @@ async function updateSelectors() {
       option.value = "";
       option.text = "Default system output";
       speakers.insertBefore(option, speakers.children[0]);
+      if (!video.sinkId) speakers.value = "";
     }
     {
       const option = document.createElement('option');
