@@ -1,0 +1,138 @@
+<html>
+<meta charset=utf-8>
+<button id="go">Go!</button><br><br>
+Camera: <select id="camera"></select><br>
+Microphone: <select id="microphone"></select><br>
+Speakers: <select id="speakers">
+  <option value="">Default system output</option>
+  <option value="other">Other...</option>
+</select><br>
+<video id="video" height="200" autoplay controls></video><br>
+<div id="div"></div><br>
+<script>
+
+const console = { log: msg => div.innerHTML += msg + "<br>" };
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+async function getUserMedia({video, audio}) {
+  if (video === true) {
+    video = {deviceId: localStorage.video};
+  }
+  if (audio === true) {
+    audio = {deviceId: localStorage.audio};
+  }
+  const stream = await navigator.mediaDevices.getUserMedia({video, audio});
+  for (const track of stream.getTracks()) {
+    localStorage[track.kind] = track.getSettings().deviceId;
+  }
+  return stream;
+}
+
+go.onclick = async () => {
+  try {
+    video.srcObject = await getUserMedia({audio: true, video: true});
+    updateSelectors();
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+async function replaceUserMedia(constraints, ...oldTracks) {
+  try {
+     return await getUserMedia(constraints);
+  } catch (e) {
+    if (e.name != "NotReadableError") throw e;
+    for (const track of oldTracks) {
+      track.stop();
+    }
+    return await getUserMedia(constraints);
+  }
+}
+
+microphone.onchange = async () => {
+  try {
+    const constraints = {audio: {deviceId: {exact: microphone.value}}};
+    let [track] = video.srcObject.getAudioTracks();
+    track = (await replaceUserMedia(constraints, track)).getAudioTracks()[0];
+    video.srcObject = new MediaStream([track, ...video.srcObject.getVideoTracks()]);
+  } catch (e) {
+    updateSelectors();
+    console.log(e);
+  }
+};
+
+camera.onchange = async () => {
+  try {
+    const constraints = {video: {deviceId: {exact: camera.value}}};
+    let [track] = video.srcObject.getVideoTracks();
+    track = (await replaceUserMedia(constraints, track)).getVideoTracks()[0];
+    video.srcObject = new MediaStream([track, ...video.srcObject.getAudioTracks()]);
+  } catch (e) {
+    updateSelectors();
+    console.log(e);
+  }
+};
+
+speakers.onchange = async () => {
+  try {
+    let label = "", deviceId = speakers.value;
+    if (deviceId == "other") {
+      ({deviceId, label} = await navigator.mediaDevices.selectAudioOutput({deviceId}));
+    }
+    console.log(`Switching to ${label || "default"}`);
+    await video.setSinkId(deviceId);
+    speakers.innerText = label;
+    updateSelectors();
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+navigator.mediaDevices.ondevicechange = () => updateSelectors();
+
+async function updateSelectors() {
+  const selectedIds = [
+    ...(video.srcObject?.getTracks() || []).map(t => t.getSettings().deviceId),
+    video.sinkId
+  ];
+
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+
+    for (const [s, kind, name] of [[camera, "videoinput", "Camera"],
+                                   [microphone, "audioinput", "Microphone"],
+                                   [speakers, "audiooutput", "Speakers"]]) {
+      const old = s.value;
+      while (s.firstChild) s.removeChild(s.firstChild);
+      let i = 0;
+      for (const device of devices) {
+        if (device.kind != kind) continue;
+        const option = document.createElement('option');
+        option.value = device.deviceId;
+        option.text = device.label || `${name} ${++i}`;
+        s.appendChild(option);
+      }
+      if ([...s.options].map(({value}) => value).includes(old)) s.value = old;
+      for (const option of s.options) {
+        if (selectedIds.includes(option.value)) s.value = option.value;
+      }
+    }
+    {
+      const option = document.createElement('option');
+      option.value = "";
+      option.text = "Default system output";
+      speakers.insertBefore(option, speakers.children[0]);
+    }
+    {
+      const option = document.createElement('option');
+      option.value = "other";
+      option.text = "Other...";
+      speakers.appendChild(option);
+    }
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+</script>
+</html>
