@@ -1,3 +1,6 @@
+const div = document.documentElement
+.appendChild(document.createElement("body"))
+.appendChild(document.createElement("div"));
 const console = { log: msg => div.innerHTML += msg + "<br>" };
 
 let chain = Promise.resolve();
