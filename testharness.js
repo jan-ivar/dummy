@@ -56,7 +56,7 @@ async function doSignalingHandshake(pc1, pc2) {
 }
 
 Promise.resolve()
-.then(() => promise_test(() => console.log(`${passes}/${total}`), ""));
+.then(() => promise_test(() => console.log(`${passes}/${total}`), "finished"));
 
     function EventWatcher(test, watchedNode, eventTypes, timeoutPromise)
     {
