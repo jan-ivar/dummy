@@ -55,8 +55,7 @@ async function doSignalingHandshake(pc1, pc2) {
   await pc1.setRemoteDescription(pc2.localDescription);
 }
 
-Promise.resolve()
-.then(() => promise_test(() => console.log(`${passes}/${total}`), "finished"));
+setTimeout(() => promise_test(() => console.log(`${passes}/${total} tests passed`), "finished"), 100);
 
     function EventWatcher(test, watchedNode, eventTypes, timeoutPromise)
     {
