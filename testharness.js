@@ -48,12 +48,14 @@ function exchangeIceCandidates(pc1, pc2) {
   pc2.onicecandidate = e => pc1.addIceCandidate(e.candidate);
 }
 
-async function doSignalingHandshake(pc1, pc2) {
+async function exchangeOfferAnswer(pc1, pc2) {
   await pc1.setLocalDescription(await pc1.createOffer());
   await pc2.setRemoteDescription(pc1.localDescription);
   await pc2.setLocalDescription(await pc2.createAnswer());
   await pc1.setRemoteDescription(pc2.localDescription);
 }
+
+const doSignalingHandshake = exchangeOfferAnswer;
 
 setTimeout(() => promise_test(() => console.log(`${passes}/${total} tests passed`), "finished"), 100);
 
