@@ -9,7 +9,9 @@ const console = {log: msg => div.innerHTML += `${msg}<br>`};
 button.onclick = async () => {
   try {
     video.srcObject = await navigator.mediaDevices.getDisplayMedia({video: true});
-    console.log(video.srcObject.getVideoTracks()[0].label);
+    await new Promise(r => video.onloadedmetadata = r);
+    const {label} = video.srcObject.getVideoTracks()[0];
+    console.log(`${label} (${video.videoWidth} x ${video.videoHeight})`);
   } catch (e) {
     console.log(e);
   }
