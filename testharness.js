@@ -7,8 +7,8 @@ let chain = Promise.resolve();
 const t = {
   step_timeout: setTimeout.bind(window),
   add_cleanup: () => {},
-  step_func: f => f
-  step: f => f();
+  step_func: f => f,
+  step: f => f()
 };
 let passes = 0, total = 0;
 async function promise_test(test, name) {
