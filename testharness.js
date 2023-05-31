@@ -4,7 +4,12 @@ const div = document.documentElement
 const console = { log: msg => div.innerHTML += msg + "<br>" };
 
 let chain = Promise.resolve();
-const t = { step_timeout: setTimeout.bind(window), add_cleanup: () => {}, step_func: f => f };
+const t = {
+  step_timeout: setTimeout.bind(window),
+  add_cleanup: () => {},
+  step_func: f => f
+  step: f => f();
+};
 let passes = 0, total = 0;
 async function promise_test(test, name) {
   chain = chain
@@ -13,6 +18,12 @@ async function promise_test(test, name) {
           e => (total++, console.log(`FAIL ${name}: ${e} failed`)));
 }
 const test = (...args) => promise_test(...args);
+function async_test(func, name) {
+  const t1 = Object.assign({}, t);
+  const p = new Promise(r => t1.done = r);
+  func(t1);
+  return promise_test(() => p, name);
+}
 
 let msgCounter = 0;
 function assert_equals(a, b, msg) {
@@ -25,6 +36,11 @@ function assert_not_equals(a, b, msg) {
 const assert_true = (a, msg) => assert_equals(a, true, msg);
 const assert_false = (a, msg) => assert_equals(a, false, msg);
 const assert_unreached = (a, msg) => assert_equals(true, false, msg);
+const assert_less_than = (val, limit)  => assert_true(val < limit, name);
+function assert_between_inclusive(val, lower, upper, name) {
+  assert_true(val >= lower, name);
+  assert_true(val <= upper, name);
+}
 
 function assert_throws(errorname, f) {
   try {
