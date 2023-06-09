@@ -37,6 +37,7 @@ const assert_true = (a, msg) => assert_equals(a, true, msg);
 const assert_false = (a, msg) => assert_equals(a, false, msg);
 const assert_unreached = (a, msg) => assert_equals(true, false, msg);
 const assert_less_than = (val, limit)  => assert_true(val < limit, name);
+const assert_greater_than = (val, limit)  => assert_true(val > limit, name);
 function assert_between_inclusive(val, lower, upper, name) {
   assert_true(val >= lower, name);
   assert_true(val <= upper, name);
