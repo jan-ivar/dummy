@@ -1,0 +1,26 @@
+<html>
+<meta charset=utf-8>
+<div id="div" style="white-space: pre;"></div>
+<video id="video" autoplay></video><br>
+<script>
+const console = {log: msg => div.innerHTML += `${msg}<br>`};
+
+function dump({width, height, resizeMode}) {
+}
+
+(async () => {
+  try {
+    video.srcObject = await navigator.mediaDevices.getUserMedia({video: true});
+    const [track] = video.srcObject.getVideoTracks();
+    console.log(track.label);
+    const settings = track.getSettings();
+    const {width, height, frameRate} = track.getSettings();
+    console.log(`Settings: ${width}x${height}x${frameRate}`);
+    await new Promise(resolve => video.onloadedmetadata = resolve);
+    console.log(`Video element: ${video.videoWidth}x${video.videoHeight}`);
+  } catch(e) {
+    console.log(e);
+  }
+})();
+</script>
+</html>

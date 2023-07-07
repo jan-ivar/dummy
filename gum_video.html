@@ -3,7 +3,7 @@
 <div id="div"></div>
 <video id="video" width="320" height="200" autoplay></video><br>
 <script>
-const console = { log: msg => div.innerHTML += msg + "<br>" };
+const console = {log: msg => div.innerHTML += `${msg}<br>`};
   
 (async () => {
   try {
