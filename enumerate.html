@@ -9,6 +9,7 @@
 <button id="stopp">Stop!</button>
 <button id="speakers">Switch speakers!</button>
 <button id="list">Enumerate Devices!</button>
+<button id="reload">Reload!</button>
 <label><input type="checkbox" id="muted">Face-muted</label>
 <div id="div"><br></div>
 <script>
@@ -72,6 +73,8 @@ list.onclick = async () => {
     log(`${kind}: ${label} id=${deviceId} group=${groupId}`);
   }
 }
+
+reload.onclick = () => location.reload();
 
 navigator.mediaDevices.ondevicechange = () => log("device change!");
 </script>
