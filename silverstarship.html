@@ -1,0 +1,12 @@
+<script>
+function onClick(){
+  navigator.geolocation.getCurrentPosition(function() {
+  }, function(){
+  });
+}
+onClick();
+setTimeout(function(){
+      console.log("reload")
+      location.reload()
+},100)
+</script>
