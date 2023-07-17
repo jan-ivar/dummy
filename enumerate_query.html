@@ -31,8 +31,8 @@ async function dumpState(header = "", followup) {
   ]);
   log(`${header}camera = "${cam.state}", microphone = "${mic.state}"`);
   if (followup) {
-    mic.onchange = () => console.log(`Changed from ${header}camera = microphone = "${mic.state}", "${cam.state}"`);
-    cam.onchange = () => console.log(`Changed from ${header}camera = "${cam.state}", microphone = "${mic.state}"`);
+    mic.onchange = () => console.log(`Changed from ${header}microphone = "${mic.state}"`);
+    cam.onchange = () => console.log(`Changed from ${header}camera = "${cam.state}"`);
   }
 }
 
