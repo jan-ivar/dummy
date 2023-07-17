@@ -31,8 +31,8 @@ async function dumpState(header = "", followup) {
   ]);
   log(`${header}camera = "${cam.state}", microphone = "${mic.state}"`);
   if (followup) {
-    mic.onchange = () => log(`Changed from ${header}camera = microphone = "${mic.state}", "${cam.state}"`);
-    cam.onchange = () => log(`Changed from ${header}camera = "${cam.state}", microphone = "${mic.state}"`);
+    mic.onchange = () => console.log(`Changed from ${header}camera = microphone = "${mic.state}", "${cam.state}"`);
+    cam.onchange = () => console.log(`Changed from ${header}camera = "${cam.state}", microphone = "${mic.state}"`);
   }
 }
 
@@ -75,7 +75,7 @@ stopp.onclick = () => {
 speakers.onclick = async () => {
   try {
     const {deviceId, label} = await navigator.mediaDevices.selectAudioOutput();
-    log(`Switching speakers to ${label}`);
+    console.log(`Switching speakers to ${label}`);
     await video1.setSinkId(deviceId);
   } catch (e) {
     log(e);
