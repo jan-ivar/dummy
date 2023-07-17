@@ -9,6 +9,7 @@
 <button id="stopp">Stop!</button>
 <button id="speakers">Switch speakers!</button>
 <button id="list">Enumerate Devices!</button>
+<button id="query">Query!</button>
 <button id="reload">Reload!</button>
 <label><input type="checkbox" id="muted">Face-muted</label>
 <div id="div"><br></div>
@@ -94,6 +95,8 @@ list.onclick = async () => {
     log(`${kind}: ${label} id=${deviceId} group=${groupId}`);
   }
 }
+
+query.onclick = () => dumpState("Query: ", true);
 
 reload.onclick = () => location.reload();
 
