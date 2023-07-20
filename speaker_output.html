@@ -10,11 +10,11 @@ Speakers: <select id="speakers">
 <div id="div"></div><br>
 <script>
 
-const console = { log: msg => div.innerHTML += msg + "<br>" };
+const console = {log: msg => div.innerHTML += `${msg}<br>`};
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-async function selectAudioOutput(deviceId) {
-  const info = await navigator.mediaDevices.selectAudioOutput({deviceId});
+async function selectAudioOutput(options) {
+  const info = await navigator.mediaDevices.selectAudioOutput(options);
   localStorage.speakers = info.deviceId;
   localStorage.speakersLabel = info.label;
   return info;
