@@ -28,9 +28,19 @@ async function getUserMedia({video, audio}) {
   return stream;
 }
 
+async function selectAudioOutput(deviceId) {
+  if (!deviceId) {
+    deviceId = localStorage.speakers;
+  }
+  const info = await navigator.mediaDevices.selectAudioOutput({deviceId});
+  localStorage.speakers = info.deviceId;
+  return info;
+}
+
 go.onclick = async () => {
   try {
     video.srcObject = await getUserMedia({audio: true, video: true});
+    await video.setSinkId((await selectAudioOutput()).deviceId);
     updateSelectors();
   } catch (e) {
     console.log(e);
@@ -81,9 +91,10 @@ speakers.onchange = async () => {
       if (speakers.value == option.value) label = option.innerText;
     }
     if (deviceId == "other") {
-      ({deviceId, label} = await navigator.mediaDevices.selectAudioOutput({deviceId}));
+      ({deviceId, label} = await selectAudioOutput({deviceId}));
     }
     console.log(`Switching to ${label}`);
+    localStorage.speakers = deviceId;
     await video.setSinkId(deviceId);
     updateSelectors();
   } catch (e) {
@@ -97,7 +108,9 @@ navigator.mediaDevices.ondevicechange = () => updateSelectors();
 async function updateSelectors() {
   try {
     const selectedIds = (video.srcObject?.getTracks() || []).map(t => t.getSettings().deviceId);
-
+    if (video.sinkId) {
+      selectedIds.push(video.sinkId);
+    }
     const devices = await navigator.mediaDevices.enumerateDevices();
 
     for (const [s, kind, name] of [[camera, "videoinput", "Camera"],
