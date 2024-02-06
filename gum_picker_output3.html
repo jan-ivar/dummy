@@ -149,7 +149,7 @@ async function updateSelectors() {
       option.text = "Default system output";
       speakers.insertBefore(option, speakers.children[0]);
     }
-    if (speakers.children.length == 1 && localStorage.speakers.length) {
+    if (speakers.children.length == 1 && localStorage.speakers?.length) {
       const option = document.createElement('option');
       option.value = localStorage.speakers;
       option.text = localStorage.speakersLabel;
