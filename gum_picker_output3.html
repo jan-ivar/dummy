@@ -18,6 +18,7 @@ async function getUserMedia({video, audio}) {
   const stream = await navigator.mediaDevices.getUserMedia({video, audio});
   for (const track of stream.getTracks()) {
     localStorage[track.kind] = track.getSettings().deviceId;
+    localStorage[track.kind + "Label"] = track.label;
   }
   return stream;
 }
@@ -25,12 +26,13 @@ async function getUserMedia({video, audio}) {
 async function selectAudioOutput(options) {
   const info = await navigator.mediaDevices.selectAudioOutput(options);
   localStorage.speakers = info.deviceId;
+  localStorage.speakersLabel = info.label;
   return info;
 }
 
 go.onclick = async () => {
   try {
-    video.srcObject = spectrum(await getUserMedia({audio: {deviceId: localStorage.video}, video: {deviceId: localStorage.audio}}));
+    video.srcObject = spectrum(await getUserMedia({audio: {deviceId: localStorage.audio}, video: {deviceId: localStorage.video}}));
     if (localStorage.speakers) {
       try {
         const {deviceId} = await selectAudioOutput({deviceId: localStorage.speakers});
@@ -101,6 +103,7 @@ speakers.onchange = async () => {
     }
     console.log(`Switching to ${label}`);
     localStorage.speakers = deviceId;
+    localStorage.speakersLabel = label;
     await video.setSinkId(deviceId);
     updateSelectors();
   } catch (e) {
@@ -119,17 +122,20 @@ async function updateSelectors() {
     }
     const devices = await navigator.mediaDevices.enumerateDevices();
 
-    for (const [s, kind, name] of [[camera, "videoinput", "Camera"],
-                                   [microphone, "audioinput", "Microphone"],
-                                   [speakers, "audiooutput", "Speakers"]]) {
-      const old = s.value;
+    for (const [s, type, kind, name] of [[camera, "video", "videoinput", "Camera"],
+                                         [microphone, "audio", "audioinput", "Microphone"],
+                                         [speakers, "speakers", "audiooutput", "Speakers"]]) {
+      let old = s.value;
       while (s.firstChild) s.removeChild(s.firstChild);
       let i = 0;
       for (const device of devices) {
         if (device.kind != kind) continue;
         const option = document.createElement('option');
         option.value = device.deviceId;
-        option.text = device.label || `${name} ${++i}`;
+        i++;
+        const match = device.deviceId == localStorage[type];
+        option.text = device.label || (match && localStorage[type+"Label"]) || `${name} ${i}`;
+        if (match) old = option.value;
         s.appendChild(option);
       }
       if ([...s.options].map(({value}) => value).includes(old)) s.value = old;
@@ -142,7 +148,15 @@ async function updateSelectors() {
       option.value = "";
       option.text = "Default system output";
       speakers.insertBefore(option, speakers.children[0]);
-      if (!video.sinkId) speakers.value = "";
+    }
+    if (speakers.children.length == 1 && localStorage.speakers.length) {
+      const option = document.createElement('option');
+      option.value = localStorage.speakers;
+      option.text = localStorage.speakersLabel;
+      speakers.appendChild(option);
+      speakers.value = option.value;
+    } else if (!video.sinkId) {
+      speakers.value = "";
     }
     {
       const option = document.createElement('option');
