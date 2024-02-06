@@ -14,11 +14,21 @@ Speakers: <select id="speakers">
 const console = { log: msg => div.innerHTML += msg + "<br>" };
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-async function getUserMedia({video, audio}) {
-  const stream = await navigator.mediaDevices.getUserMedia({video, audio});
+async function getUserMedia(constraints) {
+  const stream = await navigator.mediaDevices.getUserMedia(constraints);
   for (const track of stream.getTracks()) {
     localStorage[track.kind] = track.getSettings().deviceId;
     localStorage[track.kind + "Label"] = track.label;
+    track.addEventListener("ended", async () => {
+      try {
+        console.log(`${track.label}'s ${track.kind} track ended.`);
+        console.log(`Manually fall back to any available microphone.`);
+        const [newTrack] = (await replaceUserMedia({audio: true})).getAudioTracks();
+        video.srcObject = spectrum(new MediaStream([newTrack, ...video.srcObject.getVideoTracks()]));
+      } catch (e) {
+        console.log(e);
+      }
+    }, {once:true});
   }
   return stream;
 }
@@ -101,7 +111,7 @@ speakers.onchange = async () => {
     if (deviceId == "other") {
       ({deviceId, label} = await selectAudioOutput({deviceId}));
     }
-    console.log(`Switching to ${label}`);
+    console.log(`Switching output to ${label}`);
     localStorage.speakers = deviceId;
     localStorage.speakersLabel = label;
     await video.setSinkId(deviceId);
@@ -206,13 +216,14 @@ function spectrum(stream) {
     ctx.stroke();
   }, 1000 * canvas.width / audioCtx.sampleRate);
   
-  const [track] = stream.getAudioTracks();
-  track.onended = () => {
+  const cleanup = () => {
     audioCtx.close();
     clearInterval(interval);
-  }
+  };
+  const [track] = stream.getAudioTracks();
+  track.addEventListener("ended", cleanup, {once: true});
   track.stop_ = track.stop;
-  track.stop = () => track.stop_(track.onended());
+  track.stop = () => track.stop_(cleanup());
   return stream;
 };
 </script>
