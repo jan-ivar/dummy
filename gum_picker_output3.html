@@ -1,12 +1,14 @@
 <html>
 <meta charset=utf-8>
 <button id="go">Go!</button><button id="halt">Stop!</button><br><br>
-Camera: <select id="camera"></select><br>
-Microphone: <select id="microphone"></select><br>
-Speakers: <select id="speakers">
-  <option value="">Default system output</option>
-  <option value="other">Other...</option>
-</select><br>
+<fieldset id="panel" disabled>
+  Camera: <select id="camera"></select><br>
+  Microphone: <select id="microphone"></select><br>
+  Speakers: <select id="speakers">
+    <option value="">Default system output</option>
+    <option value="other">Other...</option>
+  </select>
+</fieldset><br>
 <video id="video" height="200" autoplay controls></video><canvas id="canvas"></canvas><br>
 <div id="div"></div><br>
 <script>
@@ -22,7 +24,7 @@ async function getUserMedia(constraints) {
     track.addEventListener("ended", async () => {
       try {
         console.log(`${track.label}'s ${track.kind} track ended.`);
-        console.log(`Manually fall back to any available microphone.`);
+        console.log(`Manually fall back to any available ${track.kind} device.`);
         const [newTrack] = (await replaceUserMedia({audio: true})).getAudioTracks();
         video.srcObject = spectrum(new MediaStream([newTrack, ...video.srcObject.getVideoTracks()]));
       } catch (e) {
@@ -52,6 +54,7 @@ go.onclick = async () => {
       }
     }
     updateSelectors();
+    panel.disabled = false;
   } catch (e) {
     console.log(e);
   }
@@ -122,7 +125,19 @@ speakers.onchange = async () => {
   }
 };
 
-navigator.mediaDevices.ondevicechange = () => updateSelectors();
+navigator.mediaDevices.ondevicechange = async () => {
+  try {
+    const camCount = camera.childElementCount;
+    const micCount = microphone.childElementCount;
+    const spkCount = speakers.childElementCount;
+    await updateSelectors();
+    if (camera.childElementCount > camCount) console.log("New camera available");
+    if (microphone.childElementCount > micCount) console.log("New microphone available");
+    if (speakers.childElementCount > spkCount) console.log("New speakers available");
+  } catch (e) {
+    console.log(e);
+  }
+}
 
 async function updateSelectors() {
   try {
