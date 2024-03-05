@@ -7,6 +7,7 @@
 <video id="video1" width="160" height="120" autoplay muted></video>
 <video id="video2" width="160" height="120" autoplay></video><br>
 <div id="div"></div>
+<script src="https://webrtchacks.github.io/adapter/adapter-latest.js"></script>
 <script>
 const console = {log: msg => div.innerHTML += `${msg}<br>`};
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
