@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+<meta charset=utf-8>
+<button id="start">Start</button>
+<button id="sLD">sLD</button>
+<button id="sRD">sRD</button><br>
+<video id="video1" width="160" height="120" autoplay muted></video>
+<video id="video2" width="160" height="120" autoplay></video><br>
+<div id="div"></div>
+<script>
+const console = {log: msg => div.innerHTML += `${msg}<br>`};
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+const pc1 = new RTCPeerConnection(), pc2 = new RTCPeerConnection();
+
+start.onclick = async () => {
+  try {
+    video1.srcObject = snowBoarder();
+    pc1.addTrack(video1.srcObject.getVideoTracks()[0], video1.srcObject);
+    video2.srcObject = (await new Promise(r => pc2.ontrack = r)).streams[0];
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+pc1.oniceconnectionstatechange = () => console.log(pc1.iceConnectionState);
+
+sLD.onclick = async () => {
+  try {
+    await pc1.setLocalDescription();
+    pc1.onicecandidate = ({candidate}) => {
+      if (!candidate) {
+        console.log(`null`);
+      } else if (!candidate.candidate) {
+        console.log(`null candidate`);
+      } else {
+        const {kind} = pc1.getSenders()[candidate.sdpMid].track;
+        const {type, component, protocol} = candidate;
+        console.log(`${type} ${component} ${protocol} ${kind} candidate`);
+      }
+      pc2.addIceCandidate(e.candidate);
+    };
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+sRD.onclick = async () => {
+  try {
+    await pc2.setRemoteDescription(pc1.localDescription);
+    await pc2.setLocalDescription();
+    pc2.onicecandidate = e => pc1.addIceCandidate(e.candidate);
+    await pc1.setRemoteDescription(pc2.localDescription);
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+function snowBoarder(width = 160, fillStyle = '#eeeeee', font = "120px Arial", a = 0) {
+  const can = Object.assign(document.createElement("canvas"), {width, height: width});
+  const c = Object.assign(can.getContext('2d'), {fillStyle, font});
+  const rotate = (a, o) => (c.translate(o, o), c.rotate(a), c.translate(-o, -o));
+  requestAnimationFrame(function draw(){
+    c.fillRect(0, 0, width, width);
+    rotate(a += Math.PI / 90 * (8 + 7*Math.cos(3*Math.PI + a/10)), width/2);
+    c.fillText("🏂", width/2 - 14*width/32, width/2 + 10*width/32);
+    rotate(-a, width/2);
+    requestAnimationFrame(draw);
+  });
+  return can.captureStream();
+};
+</script>
+</html>
