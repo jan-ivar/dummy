@@ -36,7 +36,7 @@ sLD.onclick = async () => {
         const {type, component, protocol} = candidate;
         console.log(`${type} ${component} ${protocol} ${kind} candidate`);
       }
-      pc2.addIceCandidate(e.candidate);
+      pc2.addIceCandidate(candidate);
     };
   } catch (e) {
     console.log(e);
