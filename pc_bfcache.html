@@ -54,7 +54,7 @@ sRD.onclick = async () => {
   }
 };
 
-pc1.oniceconnectionstatechange = () => {
+pc1.oniceconnectionstatechange = async () => {
   console.log(pc1.iceConnectionState);
   if (pc1.iceConnectionState == "failed") {
     await sLD.onclick();
