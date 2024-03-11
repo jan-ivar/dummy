@@ -23,14 +23,6 @@ start.onclick = async () => {
   }
 };
 
-pc1.oniceconnectionstatechange = () => {
-  console.log(pc1.iceConnectionState);
-  if (pc1.iceConnectionState == "failed") {
-    await sLD.onclick();
-    await sRD.onclick();
-  }
-};
-
 sLD.onclick = async () => {
   try {
     await pc1.setLocalDescription();
@@ -59,6 +51,14 @@ sRD.onclick = async () => {
     await pc1.setRemoteDescription(pc2.localDescription);
   } catch (e) {
     console.log(e);
+  }
+};
+
+pc1.oniceconnectionstatechange = () => {
+  console.log(pc1.iceConnectionState);
+  if (pc1.iceConnectionState == "failed") {
+    await sLD.onclick();
+    await sRD.onclick();
   }
 };
 
