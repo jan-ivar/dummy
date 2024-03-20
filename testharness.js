@@ -9,7 +9,7 @@ const t = {
   add_cleanup: () => {},
   step_func: f => f,
   step: f => f(),
-  unreached_func: desc => this.step_func(() => assert_unreached(desc))
+  unreached_func: desc => () => assert_unreached(desc)
 };
 let passes = 0, total = 0;
 async function promise_test(test, name) {
