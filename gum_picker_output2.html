@@ -1,6 +1,6 @@
 <html>
 <meta charset=utf-8>
-<button id="go">Go!</button><br><br>
+<button id="go">Go!</button><button id="halt">Stop!</button><br><br>
 Camera: <select id="camera"></select><br>
 Microphone: <select id="microphone"></select><br>
 Speakers: <select id="speakers">
@@ -44,6 +44,12 @@ go.onclick = async () => {
     console.log(e);
   }
 };
+
+halt.onclick = () => {
+  for (const track of video.srcObject.getTracks()) {
+    track.stop();
+  }
+}
 
 async function replaceUserMedia(constraints, ...oldTracks) {
   try {
