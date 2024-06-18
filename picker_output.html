@@ -62,12 +62,8 @@ speakers.onchange = async () => {
 
 navigator.mediaDevices.ondevicechange = async () => {
   try {
-    const camCount = camera.childElementCount;
-    const micCount = microphone.childElementCount;
     const spkCount = speakers.childElementCount;
     await updateSelectors();
-    if (camera.childElementCount > camCount) console.log("New camera available");
-    if (microphone.childElementCount > micCount) console.log("New microphone available");
     if (speakers.childElementCount > spkCount) console.log("New speakers available");
   } catch (e) {
     console.log(e);
