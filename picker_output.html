@@ -1,21 +1,25 @@
 <html>
 <meta charset=utf-8>
-<button id="go">Go!</button><br><br>
-<fieldset id="panel" disabled>
-  Speakers: <button id="speakers">Default system output...</button> <button id="reset" hidden>Reset</button>
-<br>
-</fieldset><br>
+Speakers: <button id="speakers">Default system output...</button>
+<button id="reset" hidden>Reset</button>
+<br><br>
 <video id="video" height="200" src="frag_bunny.mp4" controls></video><br>
 <div id="div"></div><br>
 <script>
 
 const console = { log: msg => div.innerHTML += msg + "<br>" };
-const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+if (!localStorage.speakersLabel) {
+  localStorage.speakersLabel = "Default system output";
+}
+speakers.innerText = `${localStorage.speakersLabel}...`;
+
+if (localStorage.speakers) {
+  reset.hidden = false;
+}
 
 async function selectAudioOutput(options) {
   const info = await navigator.mediaDevices.selectAudioOutput(options);
-  localStorage.speakers = info.deviceId;
-  localStorage.speakersLabel = info.label;
   return info;
 }
 
@@ -24,16 +28,16 @@ async function setSinkId({deviceId, label = "Default system output"}) {
   console.log(`Switching output to ${label}`);
   await video.setSinkId(deviceId);
   speakers.innerText = `${label}...`;
+  localStorage.speakers = deviceId;
+  localStorage.speakersLabel = label;
   reset.hidden = !deviceId.length;
 }
 
-go.onclick = async () => {
+video.onplay = async () => {
   try {
     if (localStorage.speakers) {
       await setSinkId(await selectAudioOutput({deviceId: localStorage.speakers}));
     }
-    panel.disabled = false;
-    await video.play();
   } catch (e) {
     console.log(e);
   }
