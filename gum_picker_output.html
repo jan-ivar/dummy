@@ -75,7 +75,7 @@ speakers.onclick = async () => {
     const {deviceId, label} = await navigator.mediaDevices.selectAudioOutput();
     console.log(`Switching to ${label}`);
     await video.setSinkId(deviceId);
-    speakers.innerText = label;
+    speakers.innerText = `${label}...`;
   } catch (e) {
     console.log(e);
   }

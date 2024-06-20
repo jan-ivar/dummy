@@ -1,0 +1,127 @@
+<html>
+<meta charset=utf-8>
+<button id="go">Go!</button><br><br>
+<fieldset id="panel" disabled>
+  Speakers: <select id="speakers">
+    <option value="">Default system output</option>
+    <option value="other">Other...</option>
+  </select>
+</fieldset><br>
+<video id="video" height="200" src="frag_bunny.mp4" controls></video><br>
+<div id="div"></div><br>
+<script>
+
+const console = { log: msg => div.innerHTML += msg + "<br>" };
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+async function selectAudioOutput(options) {
+  const info = await navigator.mediaDevices.selectAudioOutput(options);
+  localStorage.speakers = info.deviceId;
+  localStorage.speakersLabel = info.label;
+  return info;
+}
+
+go.onclick = async () => {
+  try {
+    if (localStorage.speakers) {
+      try {
+        const {deviceId} = await selectAudioOutput({deviceId: localStorage.speakers});
+        await video.setSinkId(deviceId);
+      } catch (e) {
+        console.log(e);
+      }
+    }
+    updateSelectors();
+    panel.disabled = false;
+    await video.play();
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+speakers.onchange = async () => {
+  try {
+    let label = "", deviceId = speakers.value;
+
+    for (const option of speakers.options) {
+      if (speakers.value == option.value) label = option.innerText;
+    }
+    if (deviceId == "other") {
+      ({deviceId, label} = await selectAudioOutput({deviceId}));
+    }
+    console.log(`Switching output to ${label}`);
+    localStorage.speakers = deviceId;
+    localStorage.speakersLabel = label;
+    await video.setSinkId(deviceId);
+    updateSelectors();
+  } catch (e) {
+    console.log(e);
+    updateSelectors();
+  }
+};
+
+navigator.mediaDevices.ondevicechange = async () => {
+  try {
+    const spkCount = speakers.childElementCount;
+    await updateSelectors();
+    if (speakers.childElementCount > spkCount) console.log("New speakers available");
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+async function updateSelectors() {
+  try {
+    const selectedIds = (video.srcObject?.getTracks() || []).map(t => t.getSettings().deviceId);
+    if (video.sinkId) {
+      selectedIds.push(video.sinkId);
+    }
+    const devices = await navigator.mediaDevices.enumerateDevices();
+
+    for (const [s, type, kind, name] of [[speakers, "speakers", "audiooutput", "Speakers"]]) {
+      let old = s.value;
+      while (s.firstChild) s.removeChild(s.firstChild);
+      let i = 0;
+      for (const device of devices) {
+        if (device.kind != kind) continue;
+        const option = document.createElement('option');
+        option.value = device.deviceId;
+        i++;
+        const match = device.deviceId == localStorage[type];
+        option.text = device.label || (match && localStorage[type+"Label"]) || `${name} ${i}`;
+        if (match) old = option.value;
+        s.appendChild(option);
+      }
+      if ([...s.options].map(({value}) => value).includes(old)) s.value = old;
+      for (const option of s.options) {
+        if (selectedIds.includes(option.value)) s.value = option.value;
+      }
+    }
+    {
+      const option = document.createElement('option');
+      option.value = "";
+      option.text = "Default system output";
+      speakers.insertBefore(option, speakers.children[0]);
+    }
+    if (speakers.children.length == 1 && localStorage.speakers?.length) {
+      const option = document.createElement('option');
+      option.value = localStorage.speakers;
+      option.text = localStorage.speakersLabel;
+      speakers.appendChild(option);
+      speakers.value = option.value;
+    } else if (!video.sinkId) {
+      speakers.value = "";
+    }
+    {
+      const option = document.createElement('option');
+      option.value = "other";
+      option.text = "Other...";
+      speakers.appendChild(option);
+    }
+  } catch (e) {
+    console.log(e);
+  }
+}
+updateSelectors();
+</script>
+</html>
