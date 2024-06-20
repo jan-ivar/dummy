@@ -19,17 +19,18 @@ async function selectAudioOutput(options) {
   return info;
 }
 
+async function setSinkId({deviceId, label = "Default system output"}) {
+  if (deviceId == video.sinkId) return;
+  console.log(`Switching output to ${label}`);
+  await video.setSinkId(deviceId);
+  speakers.innerText = `${label}...`;
+  reset.hidden = !deviceId.length;
+}
+
 go.onclick = async () => {
   try {
     if (localStorage.speakers) {
-      try {
-        const {deviceId, label} = await selectAudioOutput({deviceId: localStorage.speakers});
-        await video.setSinkId(deviceId);
-        speakers.innerText = `${label}...`;
-        reset.hidden = false;
-      } catch (e) {
-        console.log(e);
-      }
+      await setSinkId(await selectAudioOutput({deviceId: localStorage.speakers}));
     }
     panel.disabled = false;
     await video.play();
@@ -40,11 +41,7 @@ go.onclick = async () => {
 
 speakers.onclick = async () => {
   try {
-    const {deviceId, label} = await selectAudioOutput();
-    console.log(`Switching output to ${label}`);
-    await video.setSinkId(deviceId);
-    speakers.innerText = `${label}...`;
-    reset.hidden = false;
+    await setSinkId(await selectAudioOutput());
   } catch (e) {
     console.log(e);
   }
@@ -52,9 +49,7 @@ speakers.onclick = async () => {
 
 reset.onclick = async () => {
   try {
-    await video.setSinkId("");
-    speakers.innerText = "Default system output...";
-    reset.hidden = true;
+    await setSinkId({deviceId: ""});
   } catch (e) {
     console.log(e);
   }
@@ -63,9 +58,8 @@ reset.onclick = async () => {
 navigator.mediaDevices.ondevicechange = async () => {
   try {
     const devices = await navigator.mediaDevices.enumerateDevices();
-    const device = devices.find(({deviceId}) => deviceId == video.sinkId);
-    if (!device) {
-      await reset.onclick();
+    if (!devices.find(({deviceId}) => deviceId == video.sinkId)) {
+      reset.onclick();
     }
   } catch (e) {
     console.log(e);
