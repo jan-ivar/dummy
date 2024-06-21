@@ -7,7 +7,7 @@ Speakers: <button id="speakers">Default system output...</button>
 <div id="div"></div><br>
 <script>
 
-const console = { log: msg => div.innerHTML += msg + "<br>" };
+const console = {log: msg => div.innerHTML += `${msg}<br>`};
 
 if (!localStorage.speakersLabel) {
   localStorage.speakersLabel = "Default system output";
