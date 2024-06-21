@@ -1,12 +1,10 @@
 <html>
 <meta charset=utf-8>
-<button id="go">Go!</button><button id="halt">Stop!</button><br><br>
-<fieldset id="panel" disabled>
-  Camera: <select id="camera"></select><br>
-  Microphone: <select id="microphone"></select><br>
-  Speakers: <button id="speakers">Default system output...</button>
-  <button id="reset" hidden>Reset</button>
-</fieldset><br>
+<button id="start">Start!</button><button id="halt">Stop!</button><br><br>
+Camera: <select id="camera" disabled></select><br>
+Microphone: <select id="microphone" disabled></select><br>
+Speakers: <button id="speakers">Default system output...</button>
+<button id="reset" hidden>Reset</button><br><br>
 <video id="video" height="200" autoplay controls></video><canvas id="canvas"></canvas><br>
 <div id="div"></div><br>
 <script>
@@ -56,14 +54,14 @@ async function setSinkId({deviceId, label = "Default system output"}) {
   reset.hidden = !deviceId.length;
 }
 
-go.onclick = async () => {
+start.onclick = async () => {
   try {
     video.srcObject = spectrum(await getUserMedia({audio: {deviceId: localStorage.audio}, video: {deviceId: localStorage.video}}));
     if (localStorage.speakers) {
       await setSinkId(await selectAudioOutput({deviceId: localStorage.speakers}));
     }
     updateSelectors();
-    panel.disabled = false;
+    camera.disabled = microphone.disabled = false;
   } catch (e) {
     console.log(e);
   }
