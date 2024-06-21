@@ -1,10 +1,23 @@
 <html>
 <meta charset=utf-8>
 <button id="start">Start!</button><button id="halt">Stop!</button><br><br>
-Camera: <select id="camera" disabled></select><br>
-Microphone: <select id="microphone" disabled></select><br>
-Speakers: <button id="speakers">Default system output...</button>
-<button id="reset" hidden>Reset</button><br><br>
+<table>
+  <tr>
+    <td>Camera:</td>
+    <td><select id="camera" disabled></select></td>
+  </tr>
+  <tr>
+    <td>Microphone:</td>
+    <td><select id="microphone" disabled></select></td>
+  </tr>
+  <tr>
+    <td>Speakers:</td>
+    <td>
+      <button id="speakers">Default system output...</button>
+      <button id="reset" hidden>Reset</button>
+    </td>
+  </tr>
+</table><br><br>
 <video id="video" height="200" autoplay controls></video><canvas id="canvas"></canvas><br>
 <div id="div"></div><br>
 <script>
