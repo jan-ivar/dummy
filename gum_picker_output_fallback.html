@@ -73,8 +73,10 @@ async function getUserMedia(constraints) {
 }
 
 async function selectAudioOutput(options) {
-  const info = await navigator.mediaDevices.selectAudioOutput(options);
-  return info;
+  if ("selectAudioOutput" in navigator.mediaDevices) {
+    return await navigator.mediaDevices.selectAudioOutput(options);
+  }
+  return options;
 }
 
 async function setSinkId({deviceId, label = "Default system output"}) {
@@ -170,10 +172,9 @@ speakers2.onchange = async () => {
     if (deviceId == "other") {
       ({deviceId, label} = await selectAudioOutput({deviceId}));
     }
-    console.log(`Switching output to ${label}`);
     localStorage.speakers = deviceId;
     localStorage.speakersLabel = label;
-    await video.setSinkId(deviceId);
+    await setSinkId({deviceId, label});
     updateSelectors();
   } catch (e) {
     console.log(e);
