@@ -230,13 +230,7 @@ async function updateSelectors() {
         if (selectedIds.includes(option.value)) s.value = option.value;
       }
     }
-    {
-      const option = document.createElement('option');
-      option.value = "";
-      option.text = "Default system output";
-      speakers2.insertBefore(option, speakers2.children[0]);
-    }
-    if (speakers2.children.length == 1 && localStorage.speakers?.length) {
+    if (!speakers2.children.length && localStorage.speakers?.length) {
       const option = document.createElement('option');
       option.value = localStorage.speakers;
       option.text = localStorage.speakersLabel;
