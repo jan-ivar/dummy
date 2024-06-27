@@ -236,8 +236,6 @@ async function updateSelectors() {
       option.text = localStorage.speakersLabel;
       speakers2.appendChild(option);
       speakers2.value = option.value;
-    } else if (!video.sinkId) {
-      speakers2.value = "";
     }
   } catch (e) {
     console.log(e);
