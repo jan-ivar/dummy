@@ -44,7 +44,11 @@ async function gum({audio, video}) {
     if (video1.srcObject && !audio != !video) {
       const [oldvideo] = video1.srcObject.getVideoTracks();
       const [oldaudio] = video1.srcObject.getAudioTracks();
-      stream.addTrack(audio? oldvideo : oldaudio);
+      if (audio && oldvideo) {
+        stream.addTrack(oldvideo);
+      } else if (video && oldaudio) {
+        stream.addTrack(oldaudio);
+      }
     }
     video1.srcObject = stream;
     unstopped.push(...video1.srcObject.getTracks());

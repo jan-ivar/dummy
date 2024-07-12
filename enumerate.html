@@ -7,6 +7,7 @@
 <button id="gum_both">Start Both!</button>
 <button id="gdm_video">Present!</button>
 <button id="stopp">Stop!</button>
+<button id="micspeakers" disabled>Use Mic's speakers!</button>
 <button id="speakers">Switch speakers!</button>
 <button id="list">Enumerate Devices!</button>
 <button id="reload">Reload!</button>
@@ -23,10 +24,17 @@ async function gum({audio, video}) {
     if (video1.srcObject && !audio != !video) {
       const [oldvideo] = video1.srcObject.getVideoTracks();
       const [oldaudio] = video1.srcObject.getAudioTracks();
-      stream.addTrack(audio? oldvideo : oldaudio);
+      if (audio && oldvideo) {
+        stream.addTrack(oldvideo);
+      } else if (video && oldaudio) {
+        stream.addTrack(oldaudio);
+      }
     }
     video1.srcObject = stream;
     unstopped.push(...video1.srcObject.getTracks());
+    if (stream.getAudioTracks().length) {
+      micspeakers.disabled = false;
+    }
   } catch (e) {
     log(e);
   }
@@ -50,6 +58,26 @@ stopp.onclick = () => {
   unstopped.forEach(track => track.stop());
   unstopped = [];
 };
+
+micspeakers.onclick = async () => {
+  try {
+    const groupId = video1.srcObject?.getAudioTracks()[0]?.getSettings().groupId;
+    if (!groupId) {
+      console.log(`Start mic first!`);
+      return;
+    }
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const mikespeakers = devices.find(d => d.kind == "audiooutput" && d.groupId == groupId);
+    if (!mikespeakers) {
+      console.log(`No speakers associated with this mic!`);
+      return;
+    }
+    // Microphone loophole (selectAudioOutput unneeded)
+    await video1.setSinkId(mikespeakers.deviceId);
+  } catch (e) {
+    log(e);
+  }
+}
 
 speakers.onclick = async () => {
   try {
