@@ -14,7 +14,7 @@
 <label><input type="checkbox" id="muted">Face-muted</label>
 <div id="div"><br></div>
 <script>
-const log = msg => div.innerHTML += `${msg}<br>`;
+const console = {log: msg => div.innerHTML += `${msg}<br>`};
 let unstopped = [];
 
 async function gum({audio, video}) {
@@ -36,7 +36,7 @@ async function gum({audio, video}) {
       micspeakers.disabled = false;
     }
   } catch (e) {
-    log(e);
+    console.log(e);
   }
 }
 
@@ -45,7 +45,7 @@ async function gdm(constraints) {
     video2.srcObject = await navigator.mediaDevices.getDisplayMedia(constraints);
     unstopped.push(...video2.srcObject.getTracks());
   } catch (e) {
-    log(e);
+    console.log(e);
   }
 }
 
@@ -76,7 +76,7 @@ micspeakers.onclick = async () => {
     console.log(`Switching speakers to ${mikespeakers.label}`);
     await video1.setSinkId(mikespeakers.deviceId);
   } catch (e) {
-    log(e);
+    console.log(e);
   }
 }
 
@@ -86,7 +86,7 @@ speakers.onclick = async () => {
     console.log(`Switching speakers to ${label}`);
     await video1.setSinkId(deviceId);
   } catch (e) {
-    log(e);
+    console.log(e);
   }
 }
 
@@ -99,7 +99,7 @@ list.onclick = async () => {
   const devices = await navigator.mediaDevices.enumerateDevices();
   log(devices.length + " devices.");
   for (const {kind, label, deviceId, groupId} of devices) {
-    log(`${kind}: ${label} id=${deviceId} group=${groupId}`);
+    console.log(`${kind}: ${label} id=${deviceId} group=${groupId}`);
   }
 }
 
