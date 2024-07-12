@@ -72,7 +72,8 @@ micspeakers.onclick = async () => {
       console.log(`No speakers associated with this mic!`);
       return;
     }
-    // Microphone loophole (selectAudioOutput unneeded)
+    // Microphone loophole (calling selectAudioOutput() is not needed)
+    console.log(`Switching speakers to ${mikespeakers.label}`);
     await video1.setSinkId(mikespeakers.deviceId);
   } catch (e) {
     log(e);
