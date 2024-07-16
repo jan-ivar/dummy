@@ -20,7 +20,7 @@ let unstopped = [];
 async function gum({audio, video}) {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({audio, video});
-    
+
     if (video1.srcObject && !audio != !video) {
       const [oldvideo] = video1.srcObject.getVideoTracks();
       const [oldaudio] = video1.srcObject.getAudioTracks();
@@ -97,7 +97,7 @@ muted.onclick = () => {
 
 list.onclick = async () => {
   const devices = await navigator.mediaDevices.enumerateDevices();
-  log(devices.length + " devices.");
+  console.log(devices.length + " devices.");
   for (const {kind, label, deviceId, groupId} of devices) {
     console.log(`${kind}: ${label} id=${deviceId} group=${groupId}`);
   }
@@ -105,6 +105,6 @@ list.onclick = async () => {
 
 reload.onclick = () => location.reload();
 
-navigator.mediaDevices.ondevicechange = () => log("device change!");
+navigator.mediaDevices.ondevicechange = () => console.log("device change!");
 </script>
 </html>

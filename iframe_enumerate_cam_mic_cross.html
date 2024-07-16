@@ -3,7 +3,58 @@
 <body>
 <p>iframe test.</p>
 <iframe id="iframe" src="https://mozilla.github.io/webrtc-landing/enumerate.html" allow="camera;microphone" width="100%" height="50%">
-</iframe>
+</iframe><br>
+<video id="video1" height="120" autoplay></video><br>
+<button id="gum_audio">Start Mic!</button>
+<button id="gum_video">Start Cam!</button>
+<button id="gum_both">Start Both!</button>
+<button id="stopp">Stop!</button>
+<button id="list">Enumerate Devices!</button>
+<a href="https://mozilla.github.io/webrtc-landing/enumerate.html">navigate</a>
+<br>
+<div id="div"><br></div>
 </pre>
 </body>
+<script>
+const console = {log: msg => div.innerHTML += `${msg}<br>`};
+let unstopped = [];
+
+async function gum({audio, video}) {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({audio, video});
+
+    if (video1.srcObject && !audio != !video) {
+      const [oldvideo] = video1.srcObject.getVideoTracks();
+      const [oldaudio] = video1.srcObject.getAudioTracks();
+      if (audio && oldvideo) {
+        stream.addTrack(oldvideo);
+      } else if (video && oldaudio) {
+        stream.addTrack(oldaudio);
+      }
+    }
+    video1.srcObject = stream;
+    unstopped.push(...video1.srcObject.getTracks());
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+gum_audio.onclick = () => gum({audio: true});
+gum_video.onclick = () => gum({video: true});
+gum_both.onclick = () => gum({video: true, audio: true});
+
+stopp.onclick = () => {
+  unstopped.forEach(track => track.stop());
+  unstopped = [];
+};
+
+list.onclick = async () => {
+  const devices = await navigator.mediaDevices.enumerateDevices();
+  console.log(devices.length + " devices.");
+  for (const {kind, label, deviceId, groupId} of devices) {
+    console.log(`${kind}: ${label} id=${deviceId} group=${groupId}`);
+  }
+}
+
+</script>
 </html>
