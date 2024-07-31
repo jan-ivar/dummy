@@ -1,0 +1,24 @@
+<html>
+<meta charset=utf-8>
+<button id="front">Front</button><button id="back">Back</button>
+<div id="div"></div>
+<video id="video" autoplay></video><br>
+<script>
+const console = {log: msg => div.innerHTML += `${msg}<br>`};
+  
+async function gum(exact) {
+  try {
+    if (video.srcObject) {
+      video.srcObject.getVideoTracks()[0].stop();
+    }
+    video.srcObject = await navigator.mediaDevices.getUserMedia({video: {facingMode: {exact}}});
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+front.onclick = () => gum("user");
+back.onclick = () => gum("environment");
+
+</script>
+</html>
