@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+	<body>
+		<script type="module">
+			const a = new RTCPeerConnection();
+			const b = new RTCPeerConnection();
+			a.createDataChannel('');
+			a.addEventListener('icecandidate', async ({candidate}) => await b.addIceCandidate(candidate));
+			b.addEventListener('icecandidate', async ({candidate}) => await a.addIceCandidate(candidate));
+
+			// Modify the ICE credentials
+			const offer = await a.createOffer();
+			offer.sdp = offer.sdp
+				.replaceAll(/a=ice-ufrag:.+/img, 'a=ice-ufrag:test/ice/ufrag')
+				.replaceAll(/a=ice-pwd:.+/img, 'a=ice-pwd:the/ice/password/constant');
+
+			// Do the normal offer / answer
+			await a.setLocalDescription(offer);
+			await b.setRemoteDescription(a.localDescription);
+			await b.setLocalDescription();
+			await a.setRemoteDescription(b.localDescription);
+
+			// Modify the connection 
+			a.addTransceiver('audio');
+			
+			await a.setLocalDescription();
+			// In Firefox this offer doesn't have test/ice/ufrag and the/ice/password/constant as its credentials
+			// In Chrome the credentials are the same as the munged offer.
+			console.log("a's offer:", a.localDescription);
+			
+			await b.setRemoteDescription(a.localDescription);
+			await b.setLocalDescription();
+			
+			// In Firefox this call fails:
+			await a.setRemoteDescription(b.localDescription);
+		</script>
+	</body>
+</html>
