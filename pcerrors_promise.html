@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+	<body>
+		<script type="module">
+			const a = new RTCPeerConnection();
+			a.createDataChannel('');
+			a.createOffer()
+        .then(offer => {
+          offer.sdp = offer.sdp.replaceAll(/a=ice-ufrag:.+/img, 'a=ice-ufrag:');
+          return a.setLocalDescription(offer);
+        });
+		</script>
+	</body>
+</html>
