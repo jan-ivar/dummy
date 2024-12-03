@@ -82,16 +82,16 @@ async function getUserMedia(constraints) {
         console.log(`Manually fall back to any available ${track.kind} device.`);
         const [newTrack] = (await replaceUserMedia({[track.kind]: true})).getTracks();
         if (track.kind == "audio") {
-          micsExposed = true;
           video.srcObject = spectrum(new MediaStream([newTrack, ...video.srcObject.getVideoTracks()]));
         } else if (track.kind == "video") {
-          camsExposed = true;
           video.srcObject = spectrum(new MediaStream([newTrack, ...video.srcObject.getAudioTracks()]));
         }
       } catch (e) {
         console.log(e);
       }
     }, {once:true});
+    if (track.kind == "audio") micsExposed = true;
+    if (track.kind == "video") camsExposed = true;
   }
   return stream;
 }
