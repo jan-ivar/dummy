@@ -35,7 +35,7 @@
 camOn.checked = false;
 micOn.checked = false;
 
-//const console = {log: msg => div.innerHTML += `${msg}<br>`};
+const console = {log: msg => div.innerHTML += `${msg}<br>`};
 
 if (!localStorage.speakersLabel) {
   localStorage.speakersLabel = "Default system output";
@@ -47,7 +47,7 @@ if (localStorage.speakers) {
 }
 
 async function enumerateDevices() {
-  let devices = await navigator.mediaDevices.enumerateDevices();
+  const devices = await navigator.mediaDevices.enumerateDevices();
   let videos = devices.filter(({kind}) => kind.includes("video"));
   let audios = devices.filter(({kind}) => kind.includes("audio"));
 
@@ -80,14 +80,18 @@ async function getUserMedia(constraints) {
       try {
         console.log(`${track.label}'s ${track.kind} track ended.`);
         console.log(`Manually fall back to any available ${track.kind} device.`);
-        const [newTrack] = (await replaceUserMedia({audio: true})).getAudioTracks();
-        video.srcObject = spectrum(new MediaStream([newTrack, ...video.srcObject.getVideoTracks()]));
+        const [newTrack] = (await replaceUserMedia({[track.kind]: true})).getTracks();
+        if (track.kind == "audio") {
+          micsExposed = true;
+          video.srcObject = spectrum(new MediaStream([newTrack, ...video.srcObject.getVideoTracks()]));
+        } else if (track.kind == "video") {
+          camsExposed = true;
+          video.srcObject = spectrum(new MediaStream([newTrack, ...video.srcObject.getAudioTracks()]));
+        }
       } catch (e) {
         console.log(e);
       }
     }, {once:true});
-    if (track.kind == "audio") micsExposed = true;
-    if (track.kind == "video") camsExposed = true;
   }
   return stream;
 }
@@ -123,7 +127,7 @@ camOn.onclick = async () => {
 
 camera.onfocus = async () => {
   if (!camsExposed) {
-    const stream = await getUserMedia({video: {deviceId: {exact: localStorage.video}}});
+    const stream = await getUserMedia({video: {deviceId: localStorage.video}});
     stream.getVideoTracks()[0].stop();
     updateSelectors();
   }
@@ -148,7 +152,7 @@ micOn.onclick = async () => {
 
 microphone.onfocus = async () => {
   if (!micsExposed) {
-    const stream = await getUserMedia({audio: {deviceId: {exact: localStorage.audio}}});
+    const stream = await getUserMedia({audio: {deviceId: localStorage.audio}});
     stream.getAudioTracks()[0].stop();
     updateSelectors();
   }
