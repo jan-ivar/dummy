@@ -186,7 +186,7 @@ navigator.mediaDevices.ondevicechange = async () => {
   try {
     const devices = await navigator.mediaDevices.enumerateDevices();
     if (!devices.find(({deviceId}) => deviceId == video.sinkId)) {
-      console.log(`Notified video.sinkId no longer available, but taking no action`);
+      console.log(`Was notified video.sinkId is no longer available, but taking no action`);
       //reset.onclick();
     }
 
