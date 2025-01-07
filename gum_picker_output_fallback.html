@@ -93,7 +93,7 @@ start.onclick = async () => {
   try {
     video.srcObject = spectrum(await getUserMedia({audio: {deviceId: localStorage.audio}, video: {deviceId: localStorage.video}}));
     if (localStorage.speakers) {
-      await setSinkId(await selectAudioOutput({deviceId: localStorage.speakers}));
+      await setSinkId(await selectAudioOutput({deviceId: localStorage.speakers, label: localStorage.speakersLabel}));
     }
     updateSelectors();
     camera.disabled = microphone.disabled = false;
