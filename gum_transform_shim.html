@@ -1,0 +1,77 @@
+<html>
+<meta charset=utf-8>
+<button id="start">Start</button><button id="halt">Stop</button> works in Safari 18 Tech Preview<br><br>
+Height <input id="number" type="number" min="2" max="2160" value="240">
+<input id="range" type="range" min="0" max="2160" value="240"><br>
+<div id="div"></div>
+<video id="video1" autoplay muted></video>
+<video id="video2" autoplay muted></video><br>
+<script src="https://jan-ivar.github.io/polyfills/createvideotrackgeneratorandprocessor.js"></script>
+<script>
+const console = {log: msg => div.innerHTML += `${msg}<br>`};
+  
+const worker = new Worker(`data:text/javascript,(${work.toString()})()`);
+
+let before;
+start.onclick = async () => {
+  const stream = await navigator.mediaDevices.getUserMedia({video: true});
+  video1.srcObject = stream;
+  before = stream.getVideoTracks()[0];
+  const after = await navigator.mediaDevices.createVideoTrackGeneratorAndProcessor(worker, before);
+  video2.srcObject = new MediaStream([after]);
+  halt.onclick = () => {
+    before.stop();
+    after.stop();
+  }
+};
+
+async function apply(height) {
+  await before?.applyConstraints({height});
+}
+range.oninput = () => apply(number.value = range.value);
+number.oninput = () => apply(range.value = number.value);
+
+function work() {
+  let track;
+  onmessage = async ({data: {before, constraints}}) => {
+    if (before) {
+      const vtg = new VideoTrackGenerator();
+      self.postMessage({after: vtg.track}, [vtg.track]);
+      track = before;
+      const mstp = new MediaStreamTrackProcessor({track: before});
+      try {
+        await mstp.readable.pipeThrough(new TransformStream({transform})).pipeTo(vtg.writable);
+      } finally {
+        before.stop();
+      }
+    } else if (constraints && track) {
+      await track.applyConstraints(constraints);
+    }
+  };
+
+  let canvas;
+
+  function transform(frame, controller) {
+    const {displayWidth, displayHeight} = frame;
+    if (canvas?.width != displayWidth || canvas?.height != displayHeight) {
+      canvas = new OffscreenCanvas(displayWidth, displayHeight);
+      ctx = canvas.getContext('2d', {desynchronized: true});
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+    }
+    ctx.drawImage(frame, 0, 0);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const {data} = imageData;
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i], g = data[i + 1], b = data[i + 2];
+      data[i]     = 0.393 * r + 0.769 * g + 0.189 * b;
+      data[i + 1] = 0.349 * r + 0.686 * g + 0.168 * b;
+      data[i + 2] = 0.272 * r + 0.534 * g + 0.131 * b;
+    }
+    ctx.putImageData(imageData, 0, 0);
+    controller.enqueue(new VideoFrame(canvas, {timestamp: frame.timestamp}));
+    frame.close();
+  }
+}
+</script>
+</html>
