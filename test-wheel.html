@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Scroll vs Canvas Wheel Test</title>
+  <title>Scroll vs preventDefault Test</title>
   <style>
     #scrollBox {
       width: 300px;
@@ -12,13 +12,6 @@
       margin: 20px;
       position: relative;
       border: 1px solid #ccc;
-    }
-
-    #myCanvas {
-      position: absolute;
-      top: 170px;
-      left: 170px;
-      background: rgba(255, 0, 0, 0.4);
     }
   </style>
 </head>
@@ -42,26 +35,13 @@
        a, fermentum libero.</p>
   </div>
 
-  <canvas id="myCanvas" width="300" height="300"></canvas>
-
   <script>
-    async function setup() {
-      const canvas = document.getElementById('myCanvas');
-      
-      const ctx = canvas.getContext('2d');
-      ctx.fillStyle = 'rgba(255, 0, 0, 0.4)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      canvas.addEventListener('wheel', event => {
-        console.log('Canvas wheel event:', event.deltaY);
-        scrollBox.dispatchEvent(new WheelEvent("wheel", event));
-      });
+    function setup() {
       scrollBox.addEventListener('wheel', event => {
         console.log('scrollBox wheel event:', event.deltaY);
         if (prevent.checked) event.preventDefault();
       });
     }
-
     document.addEventListener('DOMContentLoaded', setup);
   </script>
 </body>
