@@ -23,6 +23,7 @@
   </style>
 </head>
 <body>
+  <label><input type="checkbox" id="prevent">prevent default</label><br>
   <div id="scrollBox">
     <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam vehicula gravida
        ullamcorper. Phasellus vulputate justo enim, id placerat eros eleifend id. 
@@ -57,9 +58,7 @@
       });
       scrollBox.addEventListener('wheel', event => {
         console.log('scrollBox wheel event:', event.deltaY);
-
-        // Uncomment to see how intercepting prevents scrolling the text below
-        // event.preventDefault();
+        if (prevent.checked) event.preventDefault();
       });
     }
 
