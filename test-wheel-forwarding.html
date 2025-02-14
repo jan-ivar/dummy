@@ -14,7 +14,7 @@
       border: 1px solid #ccc;
     }
 
-    #myCanvas {
+    #overlay {
       position: absolute;
       top: 170px;
       left: 170px;
@@ -23,7 +23,8 @@
   </style>
 </head>
 <body>
-  <label><input type="checkbox" id="prevent">prevent default</label><br>
+  <label><input type="checkbox" id="prevent">prevent default</label>
+  <label><input type="checkbox" id="forward" checked>forward</label><br>
   <div id="scrollBox">
     <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam vehicula gravida
        ullamcorper. Phasellus vulputate justo enim, id placerat eros eleifend id. 
@@ -41,20 +42,20 @@
        tempus enim massa sit amet nulla. Aliquam finibus dui posuere, pharetra lacus 
        a, fermentum libero.</p>
   </div>
-
-  <canvas id="myCanvas" width="300" height="300"></canvas>
-
+  <canvas id="overlay" width="300" height="300"></canvas>
+  <div id="div"></div>
   <script>
     async function setup() {
-      const canvas = document.getElementById('myCanvas');
-      
-      const ctx = canvas.getContext('2d');
+      const ctx = overlay.getContext('2d');
       ctx.fillStyle = 'rgba(255, 0, 0, 0.4)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, overlay.width, overlay.height);
 
-      canvas.addEventListener('wheel', event => {
-        console.log('Canvas wheel event:', event.deltaY);
-        scrollBox.dispatchEvent(new WheelEvent("wheel", event));
+      overlay.addEventListener('wheel', event => {
+        if (forward.checked) {
+          scrollBox.dispatchEvent(new WheelEvent("wheel", event));
+        } else {
+          console.log('overlay wheel event:', event.deltaY);
+        }
       });
       scrollBox.addEventListener('wheel', event => {
         console.log('scrollBox wheel event:', event.deltaY);
@@ -63,6 +64,24 @@
     }
 
     document.addEventListener('DOMContentLoaded', setup);
+
+    const console = (() => {
+      let lastMessage, repeatCount = 1;
+      return {
+        log(msg) {
+          if (msg == lastMessage) {
+            repeatCount++;
+            const lines = div.innerHTML.split("<br>");
+            lines[lines.length - 2] = `${msg} (x${repeatCount})`;
+            div.innerHTML = lines.join("<br>");
+          } else {
+            lastMessage = msg;
+            repeatCount = 1;
+            div.innerHTML += `${msg}<br>`;
+          }
+        }
+      };
+    })();
   </script>
 </body>
 </html>

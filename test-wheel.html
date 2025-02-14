@@ -44,25 +44,23 @@
     }
     document.addEventListener('DOMContentLoaded', setup);
 
-
-  const console = (() => {
-    let lastMessage, repeatCount = 1;
-    return {
-      log(msg) {
-        if (msg == lastMessage) {
-          repeatCount++;
-          const lines = div.innerHTML.split("<br>");
-          lines[lines.length - 2] = `${msg} (x${repeatCount})`;
-          div.innerHTML = lines.join("<br>");
-        } else {
-          lastMessage = msg;
-          repeatCount = 1;
-          div.innerHTML += `${msg}<br>`;
+    const console = (() => {
+      let lastMessage, repeatCount = 1;
+      return {
+        log(msg) {
+          if (msg == lastMessage) {
+            repeatCount++;
+            const lines = div.innerHTML.split("<br>");
+            lines[lines.length - 2] = `${msg} (x${repeatCount})`;
+            div.innerHTML = lines.join("<br>");
+          } else {
+            lastMessage = msg;
+            repeatCount = 1;
+            div.innerHTML += `${msg}<br>`;
+          }
         }
-      }
-    };
-  })();
-
+      };
+    })();
   </script>
 </body>
 </html>
