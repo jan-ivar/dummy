@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Scroll vs Canvas Wheel Test</title>
+  <style>
+    #scrollBox {
+      width: 300px;
+      height: 300px;
+      overflow: auto;
+      background-color: #f0f0f0;
+      margin: 20px;
+      position: relative;
+      border: 1px solid #ccc;
+    }
+
+    #myCanvas {
+      position: absolute;
+      top: 170px;
+      left: 170px;
+      background: rgba(255, 0, 0, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div id="scrollBox">
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam vehicula gravida
+       ullamcorper. Phasellus vulputate justo enim, id placerat eros eleifend id. 
+       Sed fermentum bibendum mauris, eget scelerisque sem facilisis imperdiet. 
+       Vivamus tincidunt ex eget nisl elementum, in tempor orci bibendum. Mauris 
+       elementum augue vel massa porta interdum. Phasellus ultricies, lorem eget 
+       suscipit pharetra, enim ligula tincidunt quam, non sollicitudin ligula eros 
+       sit amet sapien. Cras sed pharetra nulla. Aenean sit amet tincidunt metus. 
+       Curabitur bibendum ornare orci, vel vehicula est dictum in. Aenean dignissim 
+       sodales odio, vitae lacinia velit rutrum et. Integer rutrum ante a dui semper, 
+       sed feugiat erat ultricies. Fusce varius pretium leo, sagittis convallis leo 
+       viverra a. Suspendisse id tellus vel turpis suscipit elementum eu eu est. 
+       Suspendisse eu eros interdum, volutpat purus eget, imperdiet justo. Morbi 
+       malesuada, mauris feugiat tristique faucibus, risus velit eleifend metus, nec 
+       tempus enim massa sit amet nulla. Aliquam finibus dui posuere, pharetra lacus 
+       a, fermentum libero.</p>
+  </div>
+
+  <canvas id="myCanvas" width="300" height="300"></canvas>
+
+  <script>
+    async function setup() {
+      const canvas = document.getElementById('myCanvas');
+      
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = 'rgba(255, 0, 0, 0.4)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      canvas.addEventListener('wheel', event => {
+        console.log('Canvas wheel event:', event.deltaY);
+        scrollBox.dispatchEvent(new WheelEvent("wheel", event));
+      });
+      scrollBox.addEventListener('wheel', event => {
+        console.log('scrollBox wheel event:', event.deltaY);
+
+        // Uncomment to see how intercepting prevents scrolling the text below
+        // event.preventDefault();
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', setup);
+  </script>
+</body>
+</html>
