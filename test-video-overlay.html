@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Video Overlay Test</title>
+</head>
+<body>
+Click & move the mouse wheel over both the video & canvas (which you can also draw on).<br>
+<label><input type="checkbox" id="forward" checked>forward</label><br>
+<div style="position: relative; display: inline-block;">
+  <video id="preview" width="320" height="240" autoplay></video>
+  <canvas id="overlay" width="320" height="240" 
+          style="position: absolute; 
+                 top: 30px; 
+                 left: 40px; 
+                 background-color: rgba(0, 0, 255, 0.5); 
+                 pointer-events: auto;">
+  </canvas>
+</div>
+<br>
+<div id="div"></div>  <div id="div"></div>
+  <script>
+(async () => {
+  preview.srcObject = await navigator.mediaDevices.getUserMedia({video: true});
+  preview.onclick = () => console.log("preview click");
+  preview.onwheel = () => console.log("preview wheel");
+  overlay.onclick = () => console.log("overlay click");
+  overlay.onwheel = event => {
+    if (forward.checked) return preview.dispatchEvent(new WheelEvent("wheel", event));
+    console.log("overlay wheel");
+  }
+  
+  // ---- Overlay drawing logic ----
+  const ctx = overlay.getContext("2d");
+  let isDrawing, lastX = 0, lastY = 0;
+
+  overlay.onmousedown = e => {
+    isDrawing = true;
+    [lastX, lastY] = [e.offsetX, e.offsetY];
+  };
+
+  overlay.onmousemove = e => {
+    if (!isDrawing) return;
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(e.offsetX, e.offsetY);
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    [lastX, lastY] = [e.offsetX, e.offsetY];
+  };
+  overlay.onmouseup = overlay.onmouseout = () => isDrawing = false;
+})();
+
+const console = (() => {
+  let lastMessage, repeatCount = 1;
+  return {
+    log(msg) {
+      if (msg == lastMessage) {
+        repeatCount++;
+        const lines = div.innerHTML.split("<br>");
+        lines[lines.length - 2] = `${msg} (x${repeatCount})`;
+        div.innerHTML = lines.join("<br>");
+      } else {
+        lastMessage = msg;
+        repeatCount = 1;
+        div.innerHTML += `${msg}<br>`;
+      }
+    }
+  };
+})();  </script>
+</body>
+</html>
