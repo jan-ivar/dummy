@@ -6,8 +6,9 @@ Height <input id="number" type="number" min="2" max="2160" value="240">
 <div id="div"></div>
 <video id="video1" autoplay muted></video>
 <video id="video2" autoplay muted></video><br>
-<script src="https://jan-ivar.github.io/polyfills/createvideotrackgeneratorandprocessor.js"></script>
-<script>
+<script type="module">
+import "https://jan-ivar.github.io/polyfills/createvideotrackgeneratorandprocessor.js";
+
 const console = {log: msg => div.innerHTML += `${msg}<br>`};
   
 const worker = new Worker(`data:text/javascript,(${work.toString()})()`);
