@@ -100,11 +100,11 @@ async function setSinkId({deviceId, label = defaultSpeakerLabel}) {
 start.onclick = async () => {
   try {
     video.srcObject = spectrum(await getUserMedia({audio: {deviceId: localStorage.audio}, video: {deviceId: localStorage.video}}));
+    camera.disabled = microphone.disabled = false;
+    updateSelectors();
     if (localStorage.speakers) {
       await setSinkId(await selectAudioOutput({deviceId: localStorage.speakers, label: localStorage.speakersLabel}));
     }
-    updateSelectors();
-    camera.disabled = microphone.disabled = false;
   } catch (e) {
     console.log(e);
   }
