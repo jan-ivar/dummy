@@ -164,7 +164,8 @@ speakers1.onclick = async () => {
 
 reset.onclick = async () => {
   try {
-    await setSinkId({deviceId: speakers2.value = ""});
+    await setSinkId({deviceId: ""});
+    speakers2.value = speakers2.children.find(({value}) => value == "default")? "default" : "";
   } catch (e) {
     console.log(e);
   }
