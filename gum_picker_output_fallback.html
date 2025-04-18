@@ -16,14 +16,16 @@
         <tr>
           <td>Speakers:</td>
           <td>
-            <span id="newapi">
-              <button id="speakers1">Default system output...</button>
+            <span>
+              <span id="newapi">
+                <button id="speakers1">Default system output...</button>
+              </span>
+              <span id="oldapi" style="display: none;">
+                <select id="speakers2">
+                  <option value="">Default system output</option>
+                </select>
+              </span>
               <button id="reset" hidden>Reset</button>
-            </span>
-            <span id="oldapi" style="display: none;">
-              <select id="speakers2">
-                <option value="">Default system output</option>
-              </select>
             </span>
           </td>
         </tr>
@@ -39,13 +41,15 @@
 
 const console = {log: msg => div.innerHTML += `${msg}<br>`};
 
+const defaultSpeakerLabel = "Default system output";
+
 if (!("selectAudioOutput" in navigator.mediaDevices)) {
   newapi.style.display = "none";
   oldapi.style.display = "inline";
 }
 
 if (!localStorage.speakersLabel) {
-  localStorage.speakersLabel = "Default system output";
+  localStorage.speakersLabel = defaultSpeakerLabel;
 }
 speakers1.innerText = `${localStorage.speakersLabel}...`;
 
@@ -69,6 +73,10 @@ async function getUserMedia(constraints) {
       }
     }, {once:true});
   }
+  if (stream.getAudioTracks()[0]) {
+    newapi.style.display = "none";
+    oldapi.style.display = "inline";
+  }
   return stream;
 }
 
@@ -79,7 +87,7 @@ async function selectAudioOutput(options) {
   return options;
 }
 
-async function setSinkId({deviceId, label = "Default system output"}) {
+async function setSinkId({deviceId, label = defaultSpeakerLabel}) {
   if (deviceId == video.sinkId) return;
   console.log(`Switching output to ${label}`);
   await video.setSinkId(deviceId);
@@ -156,7 +164,7 @@ speakers1.onclick = async () => {
 
 reset.onclick = async () => {
   try {
-    await setSinkId({deviceId: ""});
+    await setSinkId({deviceId: speakers2.value = ""});
   } catch (e) {
     console.log(e);
   }
@@ -168,9 +176,6 @@ speakers2.onchange = async () => {
 
     for (const option of speakers2.options) {
       if (speakers2.value == option.value) label = option.innerText;
-    }
-    if (deviceId == "other") {
-      ({deviceId, label} = await selectAudioOutput({deviceId}));
     }
     localStorage.speakers = deviceId;
     localStorage.speakersLabel = label;
@@ -229,6 +234,12 @@ async function updateSelectors() {
       for (const option of s.options) {
         if (selectedIds.includes(option.value)) s.value = option.value;
       }
+    }
+    if (!speakers2.children.length || speakers2.children[0].value != "default") {
+      const option = document.createElement('option');
+      option.value = "";
+      option.text = defaultSpeakerLabel;
+      speakers2.insertBefore(option, speakers2.children[0]);
     }
     if (!speakers2.children.length && localStorage.speakers?.length) {
       const option = document.createElement('option');
