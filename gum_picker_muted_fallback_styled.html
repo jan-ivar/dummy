@@ -218,6 +218,9 @@ halt.onclick = () => {
   for (const track of video.srcObject.getTracks()) {
     track.stop();
   }
+  video.srcObject = null;
+  camOn.checked = micOn.checked = false;
+  location.reload();
 }
 
 /* helper to map ON → icon , OFF → icon-slash */
