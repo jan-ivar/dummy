@@ -97,8 +97,10 @@ input[type=checkbox]{display:none}
   color:#fff;                 /* white icon */
 }
 </style>
-<video id="video" autoplay controls></video>
-<canvas id="canvas"></canvas><br>
+<span style="white-space:nowrap">
+  <video id="video" autoplay controls></video>
+  <canvas id="canvas" width="180" height="360"></canvas>
+</span><br>
 <table>
   <td>
     <td>
@@ -366,9 +368,6 @@ function spectrum(stream) {
   const audioCtx = new AudioContext();
   const analyser = audioCtx.createAnalyser();
   audioCtx.createMediaStreamSource(stream).connect(analyser);
-
-  canvas.width = 180;
-  canvas.height = 360;
   const ctx = canvas.getContext("2d");
   const data = new Uint8Array(canvas.width);
   ctx.strokeStyle = 'rgb(0, 125, 0)';
