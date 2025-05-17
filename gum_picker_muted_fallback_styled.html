@@ -62,8 +62,12 @@ select#speakers{
 video {
   width: 640px;           /* or 100% */
   height: 300px;
+  background:black;
   object-fit: cover;      /* scale + crop to fill */
   object-position: center;
+}
+canvas {
+  background:#a0a0a0;
 }
 .ctrls{
   display:flex;
@@ -404,7 +408,7 @@ function spectrum(stream) {
   const cleanup = () => {
     audioCtx.close();
     clearInterval(interval);
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = "#a0a0a0";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   };
   const [track] = stream.getAudioTracks();
