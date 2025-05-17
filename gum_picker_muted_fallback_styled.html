@@ -104,7 +104,7 @@ input[type=checkbox]{display:none}
 <table>
   <td>
     <td>
-      <input  type="checkbox" id="camOn" class="toggle">
+      <input type="checkbox" id="camOn" class="toggle">
       <label for="camOn" class="circle">
         <i id="camIcon" class="fa-solid fa-video"></i>
       </label>
@@ -113,7 +113,7 @@ input[type=checkbox]{display:none}
   </td>
   <td>
     <td>
-      <input  type="checkbox" id="micOn" class="toggle">
+      <input type="checkbox" id="micOn" class="toggle">
       <label for="micOn" class="circle">
         <i id="micIcon" class="fa-solid fa-video"></i>
       </label>
@@ -140,7 +140,6 @@ input[type=checkbox]{display:none}
 <script>
 const console = {log: msg => div.innerHTML += `${msg}<br>`};
 
-camOn.checked = micOn.checked = false;
 const defaultSpeakerLabel = "Default system output";
 
 if (!localStorage.speakersLabel) {
@@ -215,12 +214,13 @@ micOn.onclick = async () => {
 };
 
 halt.onclick = () => {
-  for (const track of video.srcObject.getTracks()) {
+  for (const track of video.srcObject?.getTracks() || []) {
     track.stop();
   }
   video.srcObject = null;
   camOn.checked = micOn.checked = false;
-  location.reload();
+  camOn.onchange();
+  micOn.onchange();
 }
 
 /* helper to map ON → icon , OFF → icon-slash */
@@ -403,6 +403,8 @@ function spectrum(stream) {
   const cleanup = () => {
     audioCtx.close();
     clearInterval(interval);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
   };
   const [track] = stream.getAudioTracks();
   track.addEventListener("ended", cleanup, {once: true});
