@@ -152,7 +152,6 @@ input[type=checkbox]{display:none}
 }
 </style>
 
-
 <div class="stage">
   <div class="media">
     <video id="video" autoplay></video>
@@ -234,14 +233,7 @@ async function getUserMedia(constraints) {
   return stream;
 }
 
-async function selectAudioOutput(options) {
-  if ("selectAudioOutput" in navigator.mediaDevices) {
-    return await navigator.mediaDevices.selectAudioOutput(options);
-  }
-  return options;
-}
-
-async function setSinkId({deviceId, label = defaultSpeakerLabel}) {
+async function setSinkId(deviceId, label = defaultSpeakerLabel) {
   if (deviceId == video.sinkId) return;
 //  console.log(`Switching output to ${label}`);
   await video.setSinkId(deviceId);
@@ -269,7 +261,7 @@ micOn.onclick = async () => {
     if (micOn.checked && !video.srcObject?.getAudioTracks().length) {
       const stream = spectrum(await getUserMedia({audio: {deviceId: localStorage.audio}}));
       if (localStorage.speakers) {
-        await setSinkId(await selectAudioOutput({deviceId: localStorage.speakers, label: localStorage.speakersLabel}));
+        await setSinkId(localStorage.speakers, localStorage.speakersLabel);
       }
       video.srcObject = new MediaStream([stream.getAudioTracks()[0], ...(video.srcObject?.getVideoTracks() || [])]);
     }
@@ -303,7 +295,6 @@ setIcon(micOn, micIcon, 'fa-microphone');
 camOn.onchange = () => setIcon(camOn, camIcon, 'fa-video');
 micOn.onchange = () => setIcon(micOn, micIcon, 'fa-microphone');
 
-
 async function replaceUserMedia(constraints, ...oldTracks) {
   try {
     const stream = await getUserMedia(constraints);
@@ -322,7 +313,8 @@ async function replaceUserMedia(constraints, ...oldTracks) {
 
 microphone.onchange = async () => {
   try {
-    const [oldTrack] = video.srcObject.getAudioTracks();
+    const [oldTrack] = video.srcObject?.getAudioTracks() || [];
+    if (!oldTrack) return;
     const [newTrack] = (await replaceUserMedia({audio: {deviceId: {exact: microphone.value}}}, oldTrack)).getAudioTracks();
     video.srcObject = spectrum(new MediaStream([newTrack, ...video.srcObject.getVideoTracks()]));
   } catch (e) {
@@ -333,7 +325,8 @@ microphone.onchange = async () => {
 
 camera.onchange = async () => {
   try {
-    const [oldTrack] = video.srcObject.getVideoTracks();
+    const [oldTrack] = video.srcObject?.getVideoTracks() || [];
+    if (!oldTrack) return;
     const [newTrack] = (await replaceUserMedia({video: {deviceId: {exact: camera.value}}}, oldTrack)).getVideoTracks();
     video.srcObject = new MediaStream([newTrack, ...video.srcObject.getAudioTracks()]);
   } catch (e) {
@@ -344,8 +337,8 @@ camera.onchange = async () => {
 
 async function resetSpeakers() {
   try {
-    await setSinkId({deviceId: ""});
-    speakers.value = [...speakers.children].find(({value}) => value == "default")? "default" : "";
+    await setSinkId("");
+    speakers.value = [...speakers.options].find(({value}) => value == "default")? "default" : "";
   } catch (e) {
     console.log(e);
   }
@@ -360,7 +353,8 @@ speakers.onchange = async () => {
     }
     localStorage.speakers = deviceId;
     localStorage.speakersLabel = label;
-    await setSinkId({deviceId, label});
+    if (!video.srcObject?.getAudioTracks().length) return;
+    await setSinkId(deviceId, label);
   } catch (e) {
     console.log(e);
   } finally {
@@ -374,14 +368,13 @@ navigator.mediaDevices.ondevicechange = async () => {
     if (!devices.find(({deviceId}) => deviceId == video.sinkId)) {
       resetSpeakers();
     }
-
-    const camCount = camera.childElementCount;
-    const micCount = microphone.childElementCount;
-    const spkCount = speakers.childElementCount;
+    const camCount = camera.options.length;
+    const micCount = microphone.options.length;
+    const spkCount = speakers.options.length;
     await updateSelectors();
-//    if (camera.childElementCount > camCount) console.log("New camera available");
-//    if (microphone.childElementCount > micCount) console.log("New microphone available");
-//    if (speakers.childElementCount > spkCount) console.log("New speakers available");
+//    if (camera.options.length > camCount) console.log("New camera available");
+//    if (microphone.options.length > micCount) console.log("New microphone available");
+//    if (speakers.options.length > spkCount) console.log("New speakers available");
   } catch (e) {
     console.log(e);
   }
@@ -412,13 +405,13 @@ async function updateSelectors() {
         s.appendChild(option);
       }
       if (kind == "audiooutput") {
-        if (!speakers.children.length || speakers.children[0].value != "default") {
+        if (!speakers.options.length || speakers.options[0].value != "default") {
           const option = document.createElement('option');
           option.value = "";
           option.text = defaultSpeakerLabel;
-          speakers.insertBefore(option, speakers.children[0]);
+          speakers.insertBefore(option, speakers.options[0]);
         }
-        if (!speakers.children.length && localStorage.speakers?.length) {
+        if (!speakers.options.length && localStorage.speakers?.length) {
           const option = document.createElement('option');
           option.value = localStorage.speakers;
           option.text = localStorage.speakersLabel;
