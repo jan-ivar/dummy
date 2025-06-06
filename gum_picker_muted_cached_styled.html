@@ -308,13 +308,13 @@ async function replaceUserMedia(constraints, ...oldTracks) {
   try {
     const stream = await getUserMedia(constraints);
     for (const track of oldTracks) {
-      track.stop();
+      track?.stop();
     }
     return stream;
   } catch (e) {
     if (e.name != "NotReadableError") throw e;
     for (const track of oldTracks) {
-      track.stop();
+      track?.stop();
     }
     return await getUserMedia(constraints);
   }
