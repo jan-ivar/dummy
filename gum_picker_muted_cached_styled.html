@@ -219,6 +219,8 @@ async function getUserMedia(constraints) {
   for (const track of stream.getTracks()) {
     localStorage[track.kind] = track.getSettings().deviceId;
     localStorage[track.kind + "Label"] = track.label;
+    const on = (track.kind == "video")? camOn : micOn;
+    track.enabled = on.checked;
     track.addEventListener("ended", async () => {
       try {
         console.log(`${track.label}'s ${track.kind} track ended.`);
