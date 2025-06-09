@@ -1,0 +1,116 @@
+/* ─── design tokens ─────────────────────────────────────────────── */
+:root {
+  --video-w : 640px;
+  --canvas-w:  80px;
+
+  --bg     : #fff;
+  --panel  : #fff;
+  --pill   : #fff;
+
+  --fg     : #222;
+  --accent : #0b65ff;
+  --danger : #d93c30;
+
+  --border : #d0d0d0;
+  --shadow : 0 2px 6px rgba(0,0,0,.12);
+}
+
+/* ─── base styles ───────────────────────────────────────────────── */
+html { font-size: 14px; }
+html, body {
+  margin: 5px;
+  background: var(--bg);
+  font-family: sans-serif;
+  color: var(--fg);
+}
+
+/* ─── layout ────────────────────────────────────────────────────── */
+.stage  { width: calc(var(--video-w) + var(--canvas-w)); display: flex; flex-direction: column; overflow: hidden; }
+.media  { display: flex; }
+
+.panel {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  overflow: hidden;
+}
+.panel .combo:last-child { flex: 0 0 auto; }
+
+.combo {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  min-width: 0;
+}
+
+/* ─── circular buttons ──────────────────────────────────────────── */
+.circle {
+  --sz: 56px;
+  width: var(--sz);
+  height: var(--sz);
+  flex: 0 0 var(--sz);
+  border: none;
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--fg);
+  font-size: 1.4rem;
+  display: grid;
+  place-items:center;
+  cursor: pointer;
+  transition: background .2s, transform .1s;
+}
+.circle:hover  { background: #f0f0f0; }
+.circle:active { transform: scale(.95); }
+.circle.danger { background: var(--danger); color:#fff; }
+
+#camOn:checked + label .circle,
+#micOn:checked + label .circle,
+#halt.circle            { background: var(--danger); color:#fff; }
+
+input[type=checkbox] { display:none; }
+
+/* ─── select (“device”) controls ───────────────────────────────── */
+.device {
+  appearance: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  flex: 1 1 0;
+  width: 0;            /* enable shrink-ellipsis */
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* optional pill wrapper (not used in markup but kept for reuse) */
+.pill {
+  background: var(--pill);
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  box-shadow: var(--shadow);
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 320px;
+}
+.pill i      { margin-left: 1rem; font-size: 1rem; }
+.pill::after {
+  content: "\f078";                       /* Font-Awesome chevron */
+  font-family: "Font Awesome 6 Free";
+  font-weight: 900;
+  position: absolute;
+  right: 1rem;
+  pointer-events: none;
+}
+
+/* ─── media elements ───────────────────────────────────────────── */
+video  {
+  width: var(--video-w);
+  height: 300px;
+  background: #000;
+  object-fit: cover;
+  object-position: center;
+}
+canvas { background: #a0a0a0; }

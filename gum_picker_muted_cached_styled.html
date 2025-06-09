@@ -1,191 +1,56 @@
 <!DOCTYPE html>
-<html>
-<meta charset=utf-8>
-<link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-<style>
-/* ─── light theme tokens ─────────────────────────────────────────── */
-:root{
-  --video-w : 640px;   /* keep these in sync with your <video>/<canvas> */
-  --canvas-w:  80px;
-  --bg:#ffffff;          /* page */
-  --panel:#ffffff;       /* toolbars / buttons */
-  --pill:#ffffff;        /* dropdown “track”   */
-  --fg:#222;             /* text + idle icons  */
-  --accent:#0b65ff;      /* camera / mic ON    */
-  --danger:#d93c30;      /* hang-up            */
-  --border:#d0d0d0;      /* subtle stroke      */
-  --shadow:0 2px 6px rgba(0,0,0,.12);
-}
-html{ font-size:14px; }        /* default is 16px */
-html,body{margin:5;background:var(--bg);font-family:sans-serif;color:var(--fg)}
-table{border-collapse:collapse}
-button,select{font:inherit;color:inherit}
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Media-panel demo</title>
 
-/* 1. wrapper shrinks to the larger child and centres on the page */
-.stage{
-  width:calc(var(--video-w) + var(--canvas-w));   /* 720 px here */
-  display:flex;           /* column layout = media on top, bar below */
-  flex-direction:column;
-  overflow:hidden;        /* anything wider is simply clipped */
-}
+  <!-- Icons -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
-/* 2. keep video and canvas in one line */
-.media{ display:flex; }
+  <!-- App styles -->
+  <link rel="stylesheet" href="gum_picker_style.css" />
+</head>
 
-.panel{
-  display:flex;
-  align-items:center;
-  width:100%;          /* still lock to video + canvas width */
-  gap:1.5rem;
-  overflow:hidden;     /* just in case                        */
-}
-.panel .combo:last-child{ flex:0 0 auto; }
-
-.combo{
-  /* » let each combo start at 0 and grow/shrink evenly « */
-  flex:1 1 0;          /* grow = 1,  shrink = 1,  basis = 0  */
-  display:flex;
-  align-items:center;
-  gap:.6rem;
-  min-width:0;         /* allow shrinking below content-size  */
-}
-
-/* round icon never changes size */
-.circle{flex:0 0 56px;}
-
-
-/* SELECT shrinks / ellipses instead of widening the row */
-.combo select{
-  flex:1 1 0;       /* can grow AND shrink; base = 0            */
-  width:0;          /* ← key: override the auto (min-content)   */
-  min-width:0;      /* allow shrinking past intrinsic size      */
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-
-/* red hang-up circle: stay fixed size and hug the right edge */
-#halt{
-  flex:0 0 56px;              /* don’t grow or shrink                 */
-}
-
-/* red circle column already sized in grid-template */
-.circle.danger{background:var(--danger);color:#fff}
-
-/* ─── pill-style selectors ───────────────────────────────────────── */
-select#camera,
-select#microphone,
-select#speakers{
-  width:auto;                /* ← let the text decide */
-}
-
-select#camera,
-select#microphone,
-select#speakers{
-  appearance:none;
-  width:auto;
-  background:transparent;
-  border:none;
-  cursor:pointer;
-}
-.pill{
-  background:var(--pill);
-  border:1px solid var(--border);
-  border-radius:9999px;
-  box-shadow:var(--shadow);
-  position:relative;
-  display:flex;
-  align-items:center;
-  min-width:320px;
-}
-.pill i{margin-left:1rem;font-size:1rem}
-.pill::after{                               /* custom arrow */
-  content:"\f078";                          /* fa-chevron-down */
-  font-family:"Font Awesome 6 Free";font-weight:900;
-  position:absolute;right:1rem;
-  pointer-events:none;
-}
-video {
-  width: 640px;           /* or 100% */
-  height: 300px;
-  background:black;
-  object-fit: cover;      /* scale + crop to fill */
-  object-position: center;
-}
-canvas {
-  background:#a0a0a0;
-}
-.ctrls{
-  display:flex;
-  justify-content:space-evenly;            /* prevents clipping  */
-  gap:1.25rem;
-  padding:1.25rem;
-  background:var(--panel);
-  border-radius:1.25rem;
-  box-shadow:var(--shadow);
-  min-width:320px;                         /* prevents clipping  */
-}
-.circle{
-  --sz:56px;                           /* your diameter */
-  width:var(--sz);
-  height:var(--sz);
-  flex:0 0 var(--sz);                  /* ⬅️  rigid - don’t shrink or grow  */
-  border:none;border-radius:50%;
-  background:var(--panel);
-  color:var(--fg);
-  font-size:1.4rem;
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;
-  transition:background .2s,transform .1s;
-}
-.circle:hover{background:#f0f0f0}
-.circle:active{transform:scale(.95)}
-input[type=checkbox]{display:none}
-
-/* camera / mic “ON” colors driven by the hidden checkboxes */
-#camOn:checked + label .circle,
-#micOn:checked + label .circle,
-#halt.circle{
-  background:var(--danger);   /* #d93c30 from :root */
-  color:#fff;                 /* white icon */
-}
-</style>
-
-<div class="stage">
-  <div class="media">
-    <video id="video" autoplay></video>
-    <canvas id="canvas" width="80" height="300"></canvas>
-  </div>
-  <div class="panel">
-    <div class="combo">
-      <input type="checkbox" id="camOn" class="toggle">
-      <label for="camOn" class="circle">
-        <i id="camIcon" class="fa-solid fa-video"></i>
-      </label>
-      <select id="camera"></select></td>
+<body>
+  <div class="stage">
+    <div class="media">
+      <video id="video" autoplay></video>
+      <canvas id="canvas" width="80" height="300"></canvas>
     </div>
-    <div class="combo">
-      <input type="checkbox" id="micOn" class="toggle">
-      <label for="micOn" class="circle">
-        <i id="micIcon" class="fa-solid fa-video"></i>
-      </label>
-      <select id="microphone"></select></td>
-    </div>
-    <div class="combo">
-      <label>
-        <i id="spkIcon" class="fa-solid fa-volume-high"></i>
-      </label>
-      <select id="speakers">
-        <option value="">Default system output</option>
-      </select>
-    </div>
-    <div class="combo">
-      <button id="halt" class="circle"><i class="fa-solid fa-phone-slash"></i></button></td>
+
+    <div class="panel">
+      <div class="combo">
+        <input type="checkbox" id="camOn" class="toggle" />
+        <label for="camOn" class="circle">
+          <i id="camIcon" class="fa-solid fa-video"></i>
+        </label>
+        <select id="camera" class="device"></select>
+      </div>
+
+      <div class="combo">
+        <input type="checkbox" id="micOn" class="toggle" />
+        <label for="micOn" class="circle">
+          <i id="micIcon" class="fa-solid fa-microphone"></i>
+        </label>
+        <select id="microphone" class="device"></select>
+      </div>
+
+      <div class="combo">
+        <label><i class="fa-solid fa-volume-high"></i></label>
+        <select id="speakers" class="device">
+          <option value="">Default system output</option>
+        </select>
+      </div>
+
+      <button id="halt" class="circle danger">
+        <i class="fa-solid fa-phone-slash"></i>
+      </button>
     </div>
   </div>
-</div>
-<div id="div"></div><br>
+
+  <div id="div"></div>
+
 <script>
 const console = {log: msg => div.innerHTML += `${msg}<br>`};
 
@@ -480,4 +345,5 @@ function spectrum(stream) {
   return stream;
 };
 </script>
+</body>
 </html>
