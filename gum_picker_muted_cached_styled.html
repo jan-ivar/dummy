@@ -314,7 +314,11 @@ async function replaceUserMedia(constraints, ...oldTracks) {
 microphone.onchange = async () => {
   try {
     const [oldTrack] = video.srcObject?.getAudioTracks() || [];
-    if (!oldTrack) return;
+    if (!oldTrack) {
+      localStorage.audio = microphone.value;
+      localStorage.audioLabel = microphone.options[microphone.selectedIndex].text;
+      return;
+    }
     const [newTrack] = (await replaceUserMedia({audio: {deviceId: {exact: microphone.value}}}, oldTrack)).getAudioTracks();
     video.srcObject = spectrum(new MediaStream([newTrack, ...video.srcObject.getVideoTracks()]));
   } catch (e) {
@@ -326,7 +330,11 @@ microphone.onchange = async () => {
 camera.onchange = async () => {
   try {
     const [oldTrack] = video.srcObject?.getVideoTracks() || [];
-    if (!oldTrack) return;
+    if (!oldTrack) {
+      localStorage.video = camera.value;
+      localStorage.videoLabel = camera.options[camera.selectedIndex].text;
+      return;
+    }
     const [newTrack] = (await replaceUserMedia({video: {deviceId: {exact: camera.value}}}, oldTrack)).getVideoTracks();
     video.srcObject = new MediaStream([newTrack, ...video.srcObject.getAudioTracks()]);
   } catch (e) {
@@ -368,13 +376,7 @@ navigator.mediaDevices.ondevicechange = async () => {
     if (!devices.find(({deviceId}) => deviceId == video.sinkId)) {
       resetSpeakers();
     }
-    const camCount = camera.options.length;
-    const micCount = microphone.options.length;
-    const spkCount = speakers.options.length;
     await updateSelectors();
-//    if (camera.options.length > camCount) console.log("New camera available");
-//    if (microphone.options.length > micCount) console.log("New microphone available");
-//    if (speakers.options.length > spkCount) console.log("New speakers available");
   } catch (e) {
     console.log(e);
   }
