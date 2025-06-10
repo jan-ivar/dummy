@@ -114,3 +114,31 @@ video  {
   object-position: center;
 }
 canvas { background: #a0a0a0; }
+
+/* ─── small screens / portrait phones ──────────────────────────── */
+@media (max-width: 600px), (orientation: portrait) {
+
+  /* ➊ let everything use the full width of the phone */
+  .stage            { width: 100%; }
+  .media            { flex-direction: column; }   /* stack video & canvas */
+
+  /* ➋ show the camera stream un-cropped */
+  video {
+    width: 100%;          /* fill width */
+    height: auto;         /* keep native aspect-ratio (portrait or landscape) */
+    object-fit: contain;  /* letter-box instead of cropping */
+  }
+
+  /* ➌ stretch the tiny canvas into a thin bar under the video */
+  canvas {
+    width: 100%;
+    height: 64px;         /* tweak to taste */
+  }
+
+  /* ➍ make controls wrap nicely and be thumb-friendly */
+  .panel     { flex-wrap: wrap; gap: 0.75rem; }
+  .combo     { flex: 1 1 45%; min-width: 140px; } /* two per row */
+  .circle    { --sz: 64px; font-size: 1.8rem; }   /* bigger tap-target */
+  .device    { font-size: 1rem; }                 /* clearer labels */
+
+}
