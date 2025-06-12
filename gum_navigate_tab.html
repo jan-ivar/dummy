@@ -1,0 +1,19 @@
+<html>
+<meta charset=utf-8>
+<button id="button">Retrigger gUM</button><br>
+<video id="video" width="320" height="200" autoplay></video><br>
+<script>
+const console = { log: msg => div.innerHTML += msg + "<br>" };
+
+button.onclick = async () => {
+  try {
+    video.srcObject = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+  } catch(e) {
+    console.log(e);
+  }
+};
+button.onclick();
+</script>
+<a id="link" href="gum.html" target="_blank">Navigate to gum.html</a>
+<div id="div"></div>
+</html>
