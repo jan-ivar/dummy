@@ -9,6 +9,7 @@
   .controls { margin-bottom: 8px; }
   .row { margin: 4px 0; }
   .row label { display: inline-block; width: 70px; }
+  .row.off label { opacity: .4; }
   input:disabled{ opacity: .4; }
 </style>
 <table>
@@ -16,17 +17,17 @@
     <td>
       <div class="controls">
         <button id="openA">Camera A</button> <select id="selA" style="display:none"></select>
-        <div class="row"><input id="widthOnA" type="checkbox" checked> Width <input id="widthNumberA" type="number" min="160" max="4096" value="1280" size="5"> <input id="widthRangeA" type="range" min="160" max="4096" value="1280"></div>
-        <div class="row"><input id="heightOnA" type="checkbox" checked> Height <input id="heightNumberA" type="number" min="120" max="2160" value="720" size="5"> <input id="heightRangeA" type="range" min="120" max="2160" value="720"></div>
-        <div class="row"><input id="fpsOnA" type="checkbox" checked> FPS <input id="fpsNumberA" type="number" min="1" max="120" value="30" size="5"> <input id="fpsRangeA" type="range" min="1" max="120" value="30"></div>
+        <div class="row"><input id="widthOnA" type="checkbox" checked> <label for="widthOnA">Width</label> <input id="widthNumberA" type="number" min="160" max="4096" value="1280" size="5"> <input id="widthRangeA" type="range" min="160" max="4096" value="1280"></div>
+        <div class="row"><input id="heightOnA" type="checkbox" checked> <label for="heightOnA">Height</label> <input id="heightNumberA" type="number" min="120" max="2160" value="720" size="5"> <input id="heightRangeA" type="range" min="120" max="2160" value="720"></div>
+        <div class="row"><input id="fpsOnA" type="checkbox" checked> <label for="fpsOnA">FPS</label> <input id="fpsNumberA" type="number" min="1" max="120" value="30" size="5"> <input id="fpsRangeA" type="range" min="1" max="120" value="30"></div>
       </div>
     </td>
     <td>
       <div class="controls">
         <button id="openB">Camera B</button> <select id="selB" style="display:none"></select>
-        <div class="row"><input id="widthOnB" type="checkbox" checked> Width <input id="widthNumberB" type="number" min="160" max="4096" value="1280" size="5"> <input id="widthRangeB" type="range" min="160" max="4096" value="1280"></div>
-        <div class="row"><input id="heightOnB" type="checkbox" checked> Height <input id="heightNumberB" type="number" min="120" max="2160" value="720" size="5"> <input id="heightRangeB" type="range" min="120" max="2160" value="720"></div>
-        <div class="row"><input id="fpsOnB" type="checkbox" checked> FPS <input id="fpsNumberB" type="number" min="1" max="120" value="30" size="5"> <input id="fpsRangeB" type="range" min="1" max="120" value="30"></div>
+        <div class="row"><input id="widthOnB" type="checkbox" checked> <label for="widthOnB">Width</label> <input id="widthNumberB" type="number" min="160" max="4096" value="1280" size="5"> <input id="widthRangeB" type="range" min="160" max="4096" value="1280"></div>
+        <div class="row"><input id="heightOnB" type="checkbox" checked> <label for="heightOnB">Height</label> <input id="heightNumberB" type="number" min="120" max="2160" value="720" size="5"> <input id="heightRangeB" type="range" min="120" max="2160" value="720"></div>
+        <div class="row"><input id="fpsOnB" type="checkbox" checked> <label for="fpsOnB">FPS</label> <input id="fpsNumberB" type="number" min="1" max="120" value="30" size="5"> <input id="fpsRangeB" type="range" min="1" max="120" value="30"></div>
       </div>
     </td>
   </tr>
@@ -219,6 +220,7 @@ function bind(prefix, key, id) {
   const num = document.getElementById(key + 'Number' + prefix);
   const ran = document.getElementById(key + 'Range' + prefix);
   const chk = document.getElementById(key + 'On' + prefix);
+  const row = num.parentElement;
   const set = val => {
     num.value = ran.value = val;
     const prop = (key == 'fps') ? 'frameRate' : key;
@@ -232,9 +234,22 @@ function bind(prefix, key, id) {
     cams[prefix].enabled[prop] = chk.checked;
     num.disabled = ran.disabled = !chk.checked;
     if (cams[prefix].track) { cams[prefix].apply(cams[prefix].desired.width, cams[prefix].desired.height, cams[prefix].desired.frameRate); }
+    row.classList.toggle('off', !chk.checked);
   };
 }
 
 for (const p of ['A','B']) { bind(p, 'width'); bind(p, 'height'); bind(p, 'fps'); }
+
+// initialize disabled state and label ghosting on load
+for (const p of ['A','B']) {
+  ['width','height','fps'].forEach(k => {
+    const num = document.getElementById(k + 'Number' + p);
+    const ran = document.getElementById(k + 'Range' + p);
+    const chk = document.getElementById(k + 'On' + p);
+    const row = num.parentElement;
+    num.disabled = ran.disabled = !chk.checked;
+    row.classList.toggle('off', !chk.checked);
+  });
+}
 </script>
 </html>
