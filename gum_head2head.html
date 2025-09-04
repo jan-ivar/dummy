@@ -167,9 +167,18 @@ function syncDesired(prefix) {
   }
 }
 
+function syncEnabled(prefix) {
+  for (const k of ['width', 'height', 'fps']) {
+    const chk = document.getElementById(k + 'On' + prefix);
+    const prop = (k == 'fps') ? 'frameRate' : k;
+    cams[prefix].enabled[prop] = chk.checked;
+  }
+}
+
 async function openCam(prefix) {
   const cam = cams[prefix];
   const other = prefix == 'A' ? 'B' : 'A';
+  syncEnabled(prefix);
   syncDesired(prefix);
   try {
     if (cam.stream) { cam.stream.getTracks().forEach(t => t.stop()); }
@@ -249,6 +258,8 @@ for (const p of ['A','B']) {
     const row = num.parentElement;
     num.disabled = ran.disabled = !chk.checked;
     row.classList.toggle('off', !chk.checked);
+    const prop = (k == 'fps') ? 'frameRate' : k;
+    cams[p].enabled[prop] = chk.checked;
   });
 }
 </script>
