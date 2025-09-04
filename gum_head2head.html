@@ -9,23 +9,24 @@
   .controls { margin-bottom: 8px; }
   .row { margin: 4px 0; }
   .row label { display: inline-block; width: 70px; }
+  input:disabled{ opacity: .4; }
 </style>
 <table>
   <tr>
     <td>
       <div class="controls">
         <button id="openA">Camera A</button> <select id="selA" style="display:none"></select>
-        <div class="row">Width <input id="widthNumberA" type="number" min="160" max="4096" value="1280" size="5"> <input id="widthRangeA" type="range" min="160" max="4096" value="1280"></div>
-        <div class="row">Height <input id="heightNumberA" type="number" min="120" max="2160" value="720" size="5"> <input id="heightRangeA" type="range" min="120" max="2160" value="720"></div>
-        <div class="row">FPS <input id="fpsNumberA" type="number" min="1" max="120" value="30" size="5"> <input id="fpsRangeA" type="range" min="1" max="120" value="30"></div>
+        <div class="row"><input id="widthOnA" type="checkbox" checked> Width <input id="widthNumberA" type="number" min="160" max="4096" value="1280" size="5"> <input id="widthRangeA" type="range" min="160" max="4096" value="1280"></div>
+        <div class="row"><input id="heightOnA" type="checkbox" checked> Height <input id="heightNumberA" type="number" min="120" max="2160" value="720" size="5"> <input id="heightRangeA" type="range" min="120" max="2160" value="720"></div>
+        <div class="row"><input id="fpsOnA" type="checkbox" checked> FPS <input id="fpsNumberA" type="number" min="1" max="120" value="30" size="5"> <input id="fpsRangeA" type="range" min="1" max="120" value="30"></div>
       </div>
     </td>
     <td>
       <div class="controls">
         <button id="openB">Camera B</button> <select id="selB" style="display:none"></select>
-        <div class="row">Width <input id="widthNumberB" type="number" min="160" max="4096" value="1280" size="5"> <input id="widthRangeB" type="range" min="160" max="4096" value="1280"></div>
-        <div class="row">Height <input id="heightNumberB" type="number" min="120" max="2160" value="720" size="5"> <input id="heightRangeB" type="range" min="120" max="2160" value="720"></div>
-        <div class="row">FPS <input id="fpsNumberB" type="number" min="1" max="120" value="30" size="5"> <input id="fpsRangeB" type="range" min="1" max="120" value="30"></div>
+        <div class="row"><input id="widthOnB" type="checkbox" checked> Width <input id="widthNumberB" type="number" min="160" max="4096" value="1280" size="5"> <input id="widthRangeB" type="range" min="160" max="4096" value="1280"></div>
+        <div class="row"><input id="heightOnB" type="checkbox" checked> Height <input id="heightNumberB" type="number" min="120" max="2160" value="720" size="5"> <input id="heightRangeB" type="range" min="120" max="2160" value="720"></div>
+        <div class="row"><input id="fpsOnB" type="checkbox" checked> FPS <input id="fpsNumberB" type="number" min="1" max="120" value="30" size="5"> <input id="fpsRangeB" type="range" min="1" max="120" value="30"></div>
       </div>
     </td>
   </tr>
@@ -65,13 +66,16 @@ async function setVideo(v, vinfo, stream) {
 
 let videoDevices = [];
 const cams = {
-  A: {idx: 0, v: vA, info: ainfo, desired: {width: 1280, height: 720, frameRate: 30}, deviceId: null, selection: null},
-  B: {idx: 1, v: vB, info: binfo, desired: {width: 1280, height: 720, frameRate: 30}, deviceId: null, selection: null}
+  A: {idx: 0, v: vA, info: ainfo, desired: {width: 1280, height: 720, frameRate: 30}, enabled: {width: true, height: true, frameRate: true}, deviceId: null, selection: null},
+  B: {idx: 1, v: vB, info: binfo, desired: {width: 1280, height: 720, frameRate: 30}, enabled: {width: true, height: true, frameRate: true}, deviceId: null, selection: null}
 };
 
-function constraintFromDesired({width,height,frameRate}, dev) {
-  const c = {width,height,frameRate};
-  if (dev?.deviceId) c.deviceId = {exact:dev.deviceId};
+function constraintFromDesired(desired, dev, enabled) {
+  const c = {};
+  if (enabled.width) { c.width = desired.width; }
+  if (enabled.height) { c.height = desired.height; }
+  if (enabled.frameRate) { c.frameRate = desired.frameRate; }
+  if (dev && dev.deviceId) { c.deviceId = {exact: dev.deviceId}; }
   return c;
 }
 
@@ -87,9 +91,9 @@ function setRangesFromCapabilities(prefix, track) {
     num.value = ran.value = clamped;
     cams[prefix].desired[name == 'fps' ? 'frameRate' : name] = Number(clamped);
   };
-  if (caps.width) set('width', caps.width.min, caps.width.max, cams[prefix].desired.width);
-  if (caps.height) set('height', caps.height.min, caps.height.max, cams[prefix].desired.height);
-  if (caps.frameRate) set('fps', caps.frameRate.min, caps.frameRate.max, cams[prefix].desired.frameRate);
+  if (caps.width) { set('width', caps.width.min, caps.width.max, cams[prefix].desired.width); }
+  if (caps.height) { set('height', caps.height.min, caps.height.max, cams[prefix].desired.height); }
+  if (caps.frameRate) { set('fps', caps.frameRate.min, caps.frameRate.max, cams[prefix].desired.frameRate); }
 }
 
 function refreshSelectors(){
@@ -116,7 +120,7 @@ function refreshSelectors(){
       sel.value = cams[p].deviceId;
     } else if (cams[other].deviceId) {
       const alt = videoDevices.find(d => d.deviceId != cams[other].deviceId);
-      if (alt) sel.value = alt.deviceId;
+      if (alt) { sel.value = alt.deviceId; }
     }
   }
 }
@@ -134,7 +138,11 @@ function makeApply(prefix) {
       applying = true;
       do {
         width = W; height = H; frameRate = F;
-        await cam.track.applyConstraints({width,height,frameRate});
+        const obj = {};
+        if (cam.enabled.width) { obj.width = width; }
+        if (cam.enabled.height) { obj.height = height; }
+        if (cam.enabled.frameRate) { obj.frameRate = frameRate; }
+        await cam.track.applyConstraints(obj);
       } while (width != W || height != H || frameRate != F);
     } catch (e) {
       console.log(e);
@@ -163,7 +171,7 @@ async function openCam(prefix) {
   const other = prefix == 'A' ? 'B' : 'A';
   syncDesired(prefix);
   try {
-    if (cam.stream) cam.stream.getTracks().forEach(t => t.stop());
+    if (cam.stream) { cam.stream.getTracks().forEach(t => t.stop()); }
     const sel = cam.selection;
     if (sel && sel.indexOf('clone:') == 0) {
       const src = sel.slice(6);
@@ -172,21 +180,21 @@ async function openCam(prefix) {
       const stream = srcCam.stream.clone();
       cam.stream = stream;
       cam.track = stream.getVideoTracks()[0];
-      const desired = constraintFromDesired(cam.desired, null);
+      const desired = constraintFromDesired(cam.desired, null, cam.enabled);
       await cam.track.applyConstraints(desired);
       setRangesFromCapabilities(prefix, cam.track);
       await setVideo(cam.v, cam.info, stream);
-      cam.apply(cam.desired.width, cam.desired.height, cam.desired.frameRate);
+      cam.apply(cams[prefix].desired.width, cams[prefix].desired.height, cams[prefix].desired.frameRate);
       return;
     }
     let dev = null;
     if (cam.deviceId) {
-      dev = {deviceId:cam.deviceId};
+      dev = {deviceId: cam.deviceId};
     } else if (videoDevices.length && cams[other].deviceId) {
       const rest = videoDevices.find(d => d.kind == 'videoinput' && d.deviceId != cams[other].deviceId);
-      if (rest) dev = {deviceId: rest.deviceId};
+      if (rest) { dev = {deviceId: rest.deviceId}; }
     }
-    const constraints = {video: constraintFromDesired(cam.desired, dev)};
+    const constraints = {video: constraintFromDesired(cam.desired, dev, cam.enabled)};
     const stream = await navigator.mediaDevices.getUserMedia(constraints);
     cam.stream = stream;
     cam.track = stream.getVideoTracks()[0];
@@ -198,7 +206,7 @@ async function openCam(prefix) {
     refreshSelectors();
     setRangesFromCapabilities(prefix, cam.track);
     await setVideo(cam.v, cam.info, stream);
-    cam.apply(cam.desired.width, cam.desired.height, cam.desired.frameRate);
+    cam.apply(cams[prefix].desired.width, cams[prefix].desired.height, cams[prefix].desired.frameRate);
   } catch (e) {
     console.log(e);
   }
@@ -210,14 +218,21 @@ openB.onclick = () => openCam('B');
 function bind(prefix, key, id) {
   const num = document.getElementById(key + 'Number' + prefix);
   const ran = document.getElementById(key + 'Range' + prefix);
+  const chk = document.getElementById(key + 'On' + prefix);
   const set = val => {
     num.value = ran.value = val;
     const prop = (key == 'fps') ? 'frameRate' : key;
     cams[prefix].desired[prop] = Number(val);
-    cams[prefix].apply(cams[prefix].desired.width, cams[prefix].desired.height, cams[prefix].desired.frameRate);
+    if (cams[prefix].track) { cams[prefix].apply(cams[prefix].desired.width, cams[prefix].desired.height, cams[prefix].desired.frameRate); }
   };
   num.oninput = () => set(num.value);
   ran.oninput = () => set(ran.value);
+  chk.onchange = () => {
+    const prop = (key == 'fps') ? 'frameRate' : key;
+    cams[prefix].enabled[prop] = chk.checked;
+    num.disabled = ran.disabled = !chk.checked;
+    if (cams[prefix].track) { cams[prefix].apply(cams[prefix].desired.width, cams[prefix].desired.height, cams[prefix].desired.frameRate); }
+  };
 }
 
 for (const p of ['A','B']) { bind(p, 'width'); bind(p, 'height'); bind(p, 'fps'); }
