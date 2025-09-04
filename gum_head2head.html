@@ -65,8 +65,8 @@ async function setVideo(v, vinfo, stream) {
 
 let videoDevices = [];
 const cams = {
-  A: {idx: 0, v: vA, info: ainfo, desired: {width: 1280, height: 720, frameRate: 30}, deviceId: null},
-  B: {idx: 1, v: vB, info: binfo, desired: {width: 1280, height: 720, frameRate: 30}, deviceId: null}
+  A: {idx: 0, v: vA, info: ainfo, desired: {width: 1280, height: 720, frameRate: 30}, deviceId: null, selection: null},
+  B: {idx: 1, v: vB, info: binfo, desired: {width: 1280, height: 720, frameRate: 30}, deviceId: null, selection: null}
 };
 
 function constraintFromDesired({width,height,frameRate}, dev) {
@@ -105,8 +105,13 @@ function refreshSelectors(){
       o.text = d.label || ('Camera ' + i);
       sel.appendChild(o);
     }
+    const o2 = document.createElement('option');
+    o2.value = p=='A' ? 'clone:B' : 'clone:A';
+    o2.text = p=='A' ? 'clone of Camera B' : 'clone of Camera A';
+    sel.appendChild(o2);
     const other = (p=='A') ? 'B' : 'A';
-    if (cams[p].deviceId) sel.value = cams[p].deviceId;
+    if (cams[p].selection) sel.value = cams[p].selection;
+    else if (cams[p].deviceId) sel.value = cams[p].deviceId;
     else if (cams[other].deviceId){
       const alt = videoDevices.find(d => d.deviceId != cams[other].deviceId);
       if (alt) sel.value = alt.deviceId;
@@ -114,8 +119,8 @@ function refreshSelectors(){
   }
 }
 
-selA.onchange = () => { cams.A.deviceId = selA.value || null; openCam('A'); };
-selB.onchange = () => { cams.B.deviceId = selB.value || null; openCam('B'); };
+selA.onchange = () => { cams.A.selection = selA.value || null; cams.A.deviceId = (cams.A.selection && cams.A.selection.indexOf('clone:') == 0) ? null : cams.A.selection; openCam('A'); };
+selB.onchange = () => { cams.B.selection = selB.value || null; cams.B.deviceId = (cams.B.selection && cams.B.selection.indexOf('clone:') == 0) ? null : cams.B.selection; openCam('B'); };
 
 function makeApply(prefix) {
   let applying = false, W, H, F;
@@ -157,6 +162,21 @@ async function openCam(prefix) {
   syncDesired(prefix);
   try {
     if (cam.stream) cam.stream.getTracks().forEach(t => t.stop());
+    const sel = cam.selection;
+    if (sel && sel.indexOf('clone:') == 0) {
+      const src = sel.slice(6);
+      const srcCam = cams[src];
+      if (!srcCam || !srcCam.stream) { console.log('source ' + src + ' not open'); return; }
+      const stream = srcCam.stream.clone();
+      cam.stream = stream;
+      cam.track = stream.getVideoTracks()[0];
+      const desired = constraintFromDesired(cam.desired, null);
+      await cam.track.applyConstraints(desired);
+      setRangesFromCapabilities(prefix, cam.track);
+      await setVideo(cam.v, cam.info, stream);
+      cam.apply(cam.desired.width, cam.desired.height, cam.desired.frameRate);
+      return;
+    }
     let dev = null;
     if (cam.deviceId) {
       dev = {deviceId:cam.deviceId};
