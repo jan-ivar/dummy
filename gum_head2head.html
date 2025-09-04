@@ -65,8 +65,8 @@ async function setVideo(v, vinfo, stream) {
     const fps = (f - lastF) / ((now - lastT)/1000);
     lastF = f; lastT = now;
     const target = s.frameRate || track.getCapabilities().frameRate.max;
-    const mode = s.resizeMode || 'none';
-    update(vinfo, v.videoWidth + "x" + v.videoHeight + "x" + target + " (" + fps.toFixed(2) + ") " + mode);
+    const mode = ('resizeMode' in s) ? " " + s.resizeMode : "";
+    update(vinfo, v.videoWidth + "x" + v.videoHeight + "x" + target + " (" + fps.toFixed(2) + ")" + mode);
   }, 1000);
 }
 
