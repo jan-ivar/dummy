@@ -110,9 +110,11 @@ function refreshSelectors(){
     o2.text = p=='A' ? 'clone of Camera B' : 'clone of Camera A';
     sel.appendChild(o2);
     const other = (p=='A') ? 'B' : 'A';
-    if (cams[p].selection) sel.value = cams[p].selection;
-    else if (cams[p].deviceId) sel.value = cams[p].deviceId;
-    else if (cams[other].deviceId){
+    if (cams[p].selection) {
+      sel.value = cams[p].selection;
+    } else if (cams[p].deviceId) {
+      sel.value = cams[p].deviceId;
+    } else if (cams[other].deviceId) {
       const alt = videoDevices.find(d => d.deviceId != cams[other].deviceId);
       if (alt) sel.value = alt.deviceId;
     }
