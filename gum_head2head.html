@@ -8,7 +8,7 @@
   video{background:#000;}
   .controls { margin-bottom: 8px; }
   .row { margin: 4px 0; }
-  .row label { display: inline-block; width: 70px; }
+  .row label { display: inline-block; width: 12ch; }
   .row.off label { opacity: .4; }
   input:disabled{ opacity: .4; }
   select:disabled{ opacity: .4; }
@@ -22,7 +22,7 @@
         <div class="row"><input id="widthOnA" type="checkbox" checked> <label for="widthOnA">Width</label> <input id="widthNumberA" type="number" min="160" max="4096" value="1280" size="5"> <input id="widthRangeA" type="range" min="160" max="4096" value="1280"></div>
         <div class="row"><input id="heightOnA" type="checkbox" checked> <label for="heightOnA">Height</label> <input id="heightNumberA" type="number" min="120" max="2160" value="720" size="5"> <input id="heightRangeA" type="range" min="120" max="2160" value="720"></div>
         <div class="row"><input id="fpsOnA" type="checkbox" checked> <label for="fpsOnA">FPS</label> <input id="fpsNumberA" type="number" min="1" max="120" value="30" size="5"> <input id="fpsRangeA" type="range" min="1" max="120" value="30"></div>
-        <div class="row"><input id="resizeOnA" type="checkbox"> <label for="resizeOnA">resizeMode</label> <select id="resizeSelA"><option value="none">none</option><option value="crop-and-scale">crop-and-scale</option></select></div>
+        <div class="row"><input id="resizeOnA" type="checkbox"> <label for="resizeOnA">Resize mode</label> <select id="resizeSelA"><option value="none">none</option><option value="crop-and-scale">crop-and-scale</option></select></div>
       </div>
     </td>
     <td>
@@ -31,7 +31,7 @@
         <div class="row"><input id="widthOnB" type="checkbox" checked> <label for="widthOnB">Width</label> <input id="widthNumberB" type="number" min="160" max="4096" value="1280" size="5"> <input id="widthRangeB" type="range" min="160" max="4096" value="1280"></div>
         <div class="row"><input id="heightOnB" type="checkbox" checked> <label for="heightOnB">Height</label> <input id="heightNumberB" type="number" min="120" max="2160" value="720" size="5"> <input id="heightRangeB" type="range" min="120" max="2160" value="720"></div>
         <div class="row"><input id="fpsOnB" type="checkbox" checked> <label for="fpsOnB">FPS</label> <input id="fpsNumberB" type="number" min="1" max="120" value="30" size="5"> <input id="fpsRangeB" type="range" min="1" max="120" value="30"></div>
-        <div class="row"><input id="resizeOnB" type="checkbox"> <label for="resizeOnB">resizeMode</label> <select id="resizeSelB"><option value="none">none</option><option value="crop-and-scale">crop-and-scale</option></select></div>
+        <div class="row"><input id="resizeOnB" type="checkbox"> <label for="resizeOnB">Resize mode</label> <select id="resizeSelB"><option value="none">none</option><option value="crop-and-scale">crop-and-scale</option></select></div>
       </div>
     </td>
   </tr>
@@ -47,7 +47,7 @@
 <div id="div"></div>
 
 <script>
-const console = {log: msg => div.innerHTML += msg + "<br>"};
+const console = {log: msg => div.innerHTML += `${msg}<br>`};
 const update = (el, msg) => el.innerHTML = msg;
 
 const frames = v => v.mozPaintedFrames || v.webkitDecodedFrameCount || 0;
@@ -65,8 +65,8 @@ async function setVideo(v, vinfo, stream) {
     const fps = (f - lastF) / ((now - lastT)/1000);
     lastF = f; lastT = now;
     const target = s.frameRate || track.getCapabilities().frameRate.max;
-    const mode = ('resizeMode' in s) ? " " + s.resizeMode : "";
-    update(vinfo, v.videoWidth + "x" + v.videoHeight + "x" + target + " (" + fps.toFixed(2) + ")" + mode);
+    const mode = ('resizeMode' in s) ? ` ${s.resizeMode}` : "";
+    update(vinfo, `${v.videoWidth}x${v.videoHeight}x${target} (${fps.toFixed(2)})${mode}`);
   }, 1000);
 }
 
@@ -125,7 +125,7 @@ function refreshSelectors(){
       i++;
       const o = document.createElement('option');
       o.value = d.deviceId;
-      o.text = d.label || ('Camera ' + i);
+      o.text = d.label || `Camera ${i}`;
       sel.appendChild(o);
     }
     const o2 = document.createElement('option');
@@ -210,7 +210,7 @@ async function openCam(prefix) {
     if (sel && sel.indexOf('clone:') == 0) {
       const src = sel.slice(6);
       const srcCam = cams[src];
-      if (!srcCam || !srcCam.stream) { console.log('source ' + src + ' not open'); return; }
+      if (!srcCam || !srcCam.stream) { console.log(`source ${src} not open`); return; }
       const stream = srcCam.stream.clone();
       cam.stream = stream;
       cam.track = stream.getVideoTracks()[0];
