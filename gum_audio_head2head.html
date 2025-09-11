@@ -8,30 +8,28 @@
   audio{background:#000;}
   .controls { margin-bottom: 8px; }
   .row { margin: 4px 0; }
-  .row label { display: inline-block; echoCancellation: 12ch; }
+  .row label { display: inline-block; width: 12ch; }
   .row.off label { opacity: .4; }
   input:disabled{ opacity: .4; }
   select:disabled{ opacity: .4; }
-  .row label + input, .row label + select { margin-left: 6px; }
+  .row label + select { margin-left: 6px; }
 </style>
 <table>
   <tr>
     <td>
       <div class="controls">
         <button id="openA">Microphone A</button> <select id="selA" style="display:none"></select>
-        <div class="row"><input id="echoCancellationOnA" type="checkbox" checked> <label for="echoCancellationOnA">EchoCancellation</label> <input id="echoCancellationNumberA" type="number" min="160" max="4096" value="1280" size="5"> <input id="echoCancellationRangeA" type="range" min="160" max="4096" value="1280"></div>
-        <div class="row"><input id="noiseSuppressionOnA" type="checkbox" checked> <label for="noiseSuppressionOnA">NoiseSuppression</label> <input id="noiseSuppressionNumberA" type="number" min="120" max="2160" value="720" size="5"> <input id="noiseSuppressionRangeA" type="range" min="120" max="2160" value="720"></div>
-        <div class="row"><input id="autoGainControlOnA" type="checkbox" checked> <label for="autoGainControlOnA">AutoGainControl</label> <input id="autoGainControlNumberA" type="number" min="1" max="120" value="30" size="5"> <input id="autoGainControlRangeA" type="range" min="1" max="120" value="30"></div>
-        <div class="row"><input id="resizeOnA" type="checkbox"> <label for="resizeOnA">Resize mode</label> <select id="resizeSelA"><option value="none">none</option><option value="crop-and-scale">crop-and-scale</option></select></div>
+        <div class="row"><input id="echoCancellationOnA" type="checkbox" checked> <label for="echoCancellationOnA">Echo cancellation</label> <select id="echoCancellationSelA"><option>True</option><option>False</option></select></div>
+        <div class="row"><input id="noiseSuppressionOnA" type="checkbox" checked> <label for="noiseSuppressionOnA">Noise suppression</label> <select id="noiseSuppressionSelA"><option>True</option><option>False</option></select></div>
+        <div class="row"><input id="autoGainControlOnA" type="checkbox" checked> <label for="autoGainControlOnA">Auto gain control</label> <select id="autoGainControlSelA"><option>True</option><option>False</option></select></div>
       </div>
     </td>
     <td>
       <div class="controls">
         <button id="openB">Microphone B</button> <select id="selB" style="display:none"></select>
-        <div class="row"><input id="echoCancellationOnB" type="checkbox" checked> <label for="echoCancellationOnB">EchoCancellation</label> <input id="echoCancellationNumberB" type="number" min="160" max="4096" value="1280" size="5"> <input id="echoCancellationRangeB" type="range" min="160" max="4096" value="1280"></div>
-        <div class="row"><input id="noiseSuppressionOnB" type="checkbox" checked> <label for="noiseSuppressionOnB">NoiseSuppression</label> <input id="noiseSuppressionNumberB" type="number" min="120" max="2160" value="720" size="5"> <input id="noiseSuppressionRangeB" type="range" min="120" max="2160" value="720"></div>
-        <div class="row"><input id="autoGainControlOnB" type="checkbox" checked> <label for="autoGainControlOnB">AutoGainControl</label> <input id="autoGainControlNumberB" type="number" min="1" max="120" value="30" size="5"> <input id="autoGainControlRangeB" type="range" min="1" max="120" value="30"></div>
-        <div class="row"><input id="resizeOnB" type="checkbox"> <label for="resizeOnB">Resize mode</label> <select id="resizeSelB"><option value="none">none</option><option value="crop-and-scale">crop-and-scale</option></select></div>
+        <div class="row"><input id="echoCancellationOnB" type="checkbox" checked> <label for="echoCancellationOnB">Echo cancellation</label> <select id="echoCancellationSelB"><option>True</option><option>False</option></select></div>
+        <div class="row"><input id="noiseSuppressionOnB" type="checkbox" checked> <label for="noiseSuppressionOnB">Noise suppression</label> <select id="noiseSuppressionSelB"><option>True</option><option>False</option></select></div>
+        <div class="row"><input id="autoGainControlOnB" type="checkbox" checked> <label for="autoGainControlOnB">Auto gain control</label> <select id="autoGainControlSelB"><option>True</option><option>False</option></select></div>
       </div>
     </td>
   </tr>
@@ -40,8 +38,8 @@
     <td id="binfo">0x0</td>
   </tr>
   <tr>
-    <td><audio id="vA" autoplay muted playsinline></audio></td>
-    <td><audio id="vB" autoplay muted playsinline></audio></td>
+    <td><audio id="vA" autoplay muted controls playsinline></audio></td>
+    <td><audio id="vB" autoplay muted controls playsinline></audio></td>
   </tr>
 </table>
 <div id="div"></div>
@@ -50,30 +48,31 @@
 const console = {log: msg => div.innerHTML += `${msg}<br>`};
 const update = (el, msg) => el.innerHTML = msg;
 
-const frames = v => v.mozPaintedFrames || v.webkitDecodedFrameCount || 0;
+function boolOf(s) {
+  return String(s).toLowerCase() == 'true';
+}
 
 async function setAudio(v, vinfo, stream) {
   v.srcObject = stream;
   await new Promise(r => v.onloadedmetadata = r);
   if (v.interval) { clearInterval(v.interval); }
   const track = stream.getAudioTracks()[0];
-  let lastF = frames(v), lastT = performance.now();
   v.interval = setInterval(() => {
     const s = track.getSettings();
-    const now = performance.now();
-    const f = frames(v);
-    const autoGainControl = (f - lastF) / ((now - lastT)/1000);
-    lastF = f; lastT = now;
-    const target = s.autoGainControl || track.getCapabilities().autoGainControl.max;
-    const mode = ('resizeMode' in s) ? ` ${s.resizeMode}` : "";
-    update(vinfo, `${v.audioEchoCancellation}x${v.audioNoiseSuppression}x${target} (${autoGainControl.toFixed(2)})${mode}`);
+    const sr = s.sampleRate ? `${s.sampleRate}Hz` : '';
+    const ch = s.channelCount ? `${s.channelCount}ch` : '';
+    const ec = ('echoCancellation' in s) ? ` ec:${s.echoCancellation}` : '';
+    const ns = ('noiseSuppression' in s) ? ` ns:${s.noiseSuppression}` : '';
+    const agc = ('autoGainControl' in s) ? ` agc:${s.autoGainControl}` : '';
+    const parts = [sr, ch].filter(x => x);
+    update(vinfo, `${parts.join(' ')}${ec}${ns}${agc}` || '');
   }, 1000);
 }
 
 let audioDevices = [];
 const cams = {
-  A: {idx: 0, v: vA, info: ainfo, desired: {echoCancellation: 1280, noiseSuppression: 720, autoGainControl: 30, resizeMode: 'none'}, enabled: {echoCancellation: true, noiseSuppression: true, autoGainControl: true, resizeMode: false}, deviceId: null, selection: null},
-  B: {idx: 1, v: vB, info: binfo, desired: {echoCancellation: 1280, noiseSuppression: 720, autoGainControl: 30, resizeMode: 'none'}, enabled: {echoCancellation: true, noiseSuppression: true, autoGainControl: true, resizeMode: false}, deviceId: null, selection: null}
+  A: {idx: 0, v: vA, info: ainfo, desired: {echoCancellation: true, noiseSuppression: true, autoGainControl: true}, enabled: {echoCancellation: true, noiseSuppression: true, autoGainControl: true}, deviceId: null, selection: null},
+  B: {idx: 1, v: vB, info: binfo, desired: {echoCancellation: true, noiseSuppression: true, autoGainControl: true}, enabled: {echoCancellation: true, noiseSuppression: true, autoGainControl: true}, deviceId: null, selection: null}
 };
 
 function constraintFromDesired(desired, dev, enabled) {
@@ -81,42 +80,12 @@ function constraintFromDesired(desired, dev, enabled) {
   if (enabled.echoCancellation) { c.echoCancellation = desired.echoCancellation; }
   if (enabled.noiseSuppression) { c.noiseSuppression = desired.noiseSuppression; }
   if (enabled.autoGainControl) { c.autoGainControl = desired.autoGainControl; }
-  if (enabled.resizeMode) { c.resizeMode = desired.resizeMode; }
   if (dev && dev.deviceId) { c.deviceId = {exact: dev.deviceId}; }
   return c;
 }
 
-function setRangesFromCapabilities(prefix, track) {
-  const caps = track.getCapabilities();
-  const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
-  const set = (name, min, max, val) => {
-    const num = document.getElementById(name + 'Number' + prefix);
-    const ran = document.getElementById(name + 'Range' + prefix);
-    num.min = ran.min = min;
-    num.max = ran.max = max;
-    const clamped = clamp(val, Number(num.min), Number(num.max));
-    num.value = ran.value = clamped;
-    cams[prefix].desired[name == 'autoGainControl' ? 'autoGainControl' : name] = Number(clamped);
-  };
-  if (caps.echoCancellation) { set('echoCancellation', caps.echoCancellation.min, caps.echoCancellation.max, cams[prefix].desired.echoCancellation); }
-  if (caps.noiseSuppression) { set('noiseSuppression', caps.noiseSuppression.min, caps.noiseSuppression.max, cams[prefix].desired.noiseSuppression); }
-  if (caps.autoGainControl) { set('autoGainControl', caps.autoGainControl.min, caps.autoGainControl.max, cams[prefix].desired.autoGainControl); }
-  const sel = document.getElementById('resizeSel' + prefix);
-  if (sel) {
-    if (caps.resizeMode) {
-      sel.innerHTML = '';
-      for (const v of caps.resizeMode) {
-        const o = document.createElement('option');
-        o.value = v; o.text = v; sel.appendChild(o);
-      }
-    }
-    if (cams[prefix].desired.resizeMode) { sel.value = cams[prefix].desired.resizeMode; }
-    else { cams[prefix].desired.resizeMode = sel.value; }
-  }
-}
-
 function refreshSelectors(){
-  if (!audioDevices.length) return;
+  if (!audioDevices.length) { return; }
   for (const [p, sel] of [['A', selA], ['B', selB]]) {
     sel.style.display = '';
     sel.innerHTML = '';
@@ -144,26 +113,25 @@ function refreshSelectors(){
   }
 }
 
-selA.onchange = () => { cams.A.selection = selA.value || null; cams.A.deviceId = (cams.A.selection && cams.A.selection.indexOf('clone:') == 0) ? null : cams.A.selection; openCam('A'); };
-selB.onchange = () => { cams.B.selection = selB.value || null; cams.B.deviceId = (cams.B.selection && cams.B.selection.indexOf('clone:') == 0) ? null : cams.B.selection; openCam('B'); };
+selA.onchange = () => { cams.A.selection = selA.value || null; cams.A.deviceId = (cams.A.selection && cams.A.selection.indexOf('clone:') == 0) ? null : cams.A.selection; openMic('A'); };
+selB.onchange = () => { cams.B.selection = selB.value || null; cams.B.deviceId = (cams.B.selection && cams.B.selection.indexOf('clone:') == 0) ? null : cams.B.selection; openMic('B'); };
 
 function makeApply(prefix) {
-  let applying = false, W, H, F;
+  let applying = false, E, N, A;
   return async function apply(echoCancellation, noiseSuppression, autoGainControl) {
-    W = Number(echoCancellation); H = Number(noiseSuppression); F = Number(autoGainControl);
+    E = Boolean(echoCancellation); N = Boolean(noiseSuppression); A = Boolean(autoGainControl);
     const cam = cams[prefix];
-    if (!cam.track || applying) return;
+    if (!cam.track || applying) { return; }
     try {
       applying = true;
       do {
-        echoCancellation = W; noiseSuppression = H; autoGainControl = F;
+        echoCancellation = E; noiseSuppression = N; autoGainControl = A;
         const obj = {};
         if (cam.enabled.echoCancellation) { obj.echoCancellation = echoCancellation; }
         if (cam.enabled.noiseSuppression) { obj.noiseSuppression = noiseSuppression; }
         if (cam.enabled.autoGainControl) { obj.autoGainControl = autoGainControl; }
-        if (cam.enabled.resizeMode) { obj.resizeMode = cams[prefix].desired.resizeMode; }
         await cam.track.applyConstraints(obj);
-      } while (echoCancellation != W || noiseSuppression != H || autoGainControl != F);
+      } while (echoCancellation != E || noiseSuppression != N || autoGainControl != A);
     } catch (e) {
       console.log(e);
     } finally {
@@ -176,18 +144,9 @@ cams.A.apply = makeApply('A');
 cams.B.apply = makeApply('B');
 
 function syncDesired(prefix) {
-  for (const k of ['echoCancellation', 'noiseSuppression', 'autoGainControl', 'resize']) {
-    if (k == 'resize') {
-      const sel = document.getElementById('resizeSel' + prefix);
-      cams[prefix].desired.resizeMode = sel.value;
-    } else {
-      const num = document.getElementById(k + 'Number' + prefix);
-      const ran = document.getElementById(k + 'Range' + prefix);
-      const val = num.value;
-      num.value = ran.value = val;
-      const prop = (k == 'autoGainControl') ? 'autoGainControl' : k;
-      cams[prefix].desired[prop] = Number(val);
-    }
+  for (const k of ['echoCancellation', 'noiseSuppression', 'autoGainControl']) {
+    const sel = document.getElementById(k + 'Sel' + prefix);
+    cams[prefix].desired[k] = boolOf(sel.value);
   }
 }
 
@@ -198,7 +157,7 @@ function syncEnabled(prefix) {
   }
 }
 
-async function openCam(prefix) {
+async function openMic(prefix) {
   const cam = cams[prefix];
   const other = prefix == 'A' ? 'B' : 'A';
   syncEnabled(prefix);
@@ -215,7 +174,6 @@ async function openCam(prefix) {
       cam.track = stream.getAudioTracks()[0];
       const desired = constraintFromDesired(cam.desired, null, cam.enabled);
       await cam.track.applyConstraints(desired);
-      setRangesFromCapabilities(prefix, cam.track);
       await setAudio(cam.v, cam.info, stream);
       cam.apply(cams[prefix].desired.echoCancellation, cams[prefix].desired.noiseSuppression, cams[prefix].desired.autoGainControl);
       return;
@@ -237,7 +195,6 @@ async function openCam(prefix) {
       audioDevices = devs.filter(d => d.kind=='audioinput');
     }
     refreshSelectors();
-    setRangesFromCapabilities(prefix, cam.track);
     await setAudio(cam.v, cam.info, stream);
     cam.apply(cams[prefix].desired.echoCancellation, cams[prefix].desired.noiseSuppression, cams[prefix].desired.autoGainControl);
   } catch (e) {
@@ -245,61 +202,38 @@ async function openCam(prefix) {
   }
 }
 
-openA.onclick = () => openCam('A');
-openB.onclick = () => openCam('B');
+openA.onclick = () => openMic('A');
+openB.onclick = () => openMic('B');
 
-function bind(prefix, key, id) {
-  const num = document.getElementById(key + 'Number' + prefix);
-  const ran = document.getElementById(key + 'Range' + prefix);
+function bindBool(prefix, key) {
+  const sel = document.getElementById(key + 'Sel' + prefix);
   const chk = document.getElementById(key + 'On' + prefix);
-  const row = num.parentElement;
-  const set = val => {
-    num.value = ran.value = val;
-    const prop = (key == 'autoGainControl') ? 'autoGainControl' : key;
-    cams[prefix].desired[prop] = Number(val);
-    if (cams[prefix].track) { cams[prefix].apply(cams[prefix].desired.echoCancellation, cams[prefix].desired.noiseSuppression, cams[prefix].desired.autoGainControl); }
-  };
-  num.oninput = () => set(num.value);
-  ran.oninput = () => set(ran.value);
-  chk.onchange = () => {
-    const prop = (key == 'autoGainControl') ? 'autoGainControl' : key;
-    cams[prefix].enabled[prop] = chk.checked;
-    num.disabled = ran.disabled = !chk.checked;
-    if (cams[prefix].track) { cams[prefix].apply(cams[prefix].desired.echoCancellation, cams[prefix].desired.noiseSuppression, cams[prefix].desired.autoGainControl); }
-    row.classList.toggle('off', !chk.checked);
-  };
-}
-
-function bindResize(prefix) {
-  const sel = document.getElementById('resizeSel' + prefix);
-  const chk = document.getElementById('resizeOn' + prefix);
   const row = sel.parentElement;
   const set = val => {
     sel.value = val;
-    cams[prefix].desired.resizeMode = val;
+    cams[prefix].desired[key] = boolOf(val);
     if (cams[prefix].track) { cams[prefix].apply(cams[prefix].desired.echoCancellation, cams[prefix].desired.noiseSuppression, cams[prefix].desired.autoGainControl); }
   };
   sel.oninput = () => set(sel.value);
   chk.onchange = () => {
-    cams[prefix].enabled.resizeMode = chk.checked;
+    cams[prefix].enabled[key] = chk.checked;
     sel.disabled = !chk.checked;
     if (cams[prefix].track) { cams[prefix].apply(cams[prefix].desired.echoCancellation, cams[prefix].desired.noiseSuppression, cams[prefix].desired.autoGainControl); }
     row.classList.toggle('off', !chk.checked);
   };
 }
 
-for (const p of ['A','B']) { bind(p, 'echoCancellation'); bind(p, 'noiseSuppression'); bind(p, 'autoGainControl'); bindResize(p); }
+for (const p of ['A','B']) { bindBool(p, 'echoCancellation'); bindBool(p, 'noiseSuppression'); bindBool(p, 'autoGainControl'); }
 
 for (const p of ['A','B']) {
-  ['echoCancellation','noiseSuppression','autoGainControl'].forEach(k => {
-    const num = document.getElementById(k + 'Number' + p);
-    const ran = document.getElementById(k + 'Range' + p);
+  for (const k of ['echoCancellation','noiseSuppression','autoGainControl']) {
+    const sel = document.getElementById(k + 'Sel' + p);
     const chk = document.getElementById(k + 'On' + p);
-    const row = num.parentElement;
-    num.disabled = ran.disabled = !chk.checked;
+    const row = sel.parentElement;
+    sel.disabled = !chk.checked;
     row.classList.toggle('off', !chk.checked);
     cams[p].enabled[k] = chk.checked;
-  });
+  }
 }
 </script>
 </html>
