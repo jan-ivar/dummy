@@ -56,7 +56,7 @@ function spectrum(stream, canvas) {
   const audioCtx = new AudioContext();
   const analyser = audioCtx.createAnalyser();
   audioCtx.createMediaStreamSource(stream).connect(analyser);
-  canvas.width = 200;
+  if (!canvas.width) { canvas.width = canvas.clientWidth || 200; }
   canvas.height = 200;
   const ctx = canvas.getContext('2d');
   const data = new Uint8Array(canvas.width);
@@ -100,6 +100,8 @@ function boolOf(s) {
 
 async function setAudio(v, vinfo, stream, canvas) {
   canvas.style.display = '';
+  const w = v.clientWidth || v.offsetWidth || 300;
+  canvas.width = w;
   stream = spectrum(stream, canvas);
   v.srcObject = stream;
   await new Promise(r => v.onloadedmetadata = r);
