@@ -41,6 +41,10 @@
     <td><audio id="vA" autoplay muted controls playsinline></audio></td>
     <td><audio id="vB" autoplay muted controls playsinline></audio></td>
   </tr>
+  <tr>
+    <td><canvas id="canvasA" style="display:none"></canvas></td>
+    <td><canvas id="canvasB" style="display:none"></canvas></td>
+  </tr>
 </table>
 <div id="div"></div>
 
@@ -48,11 +52,55 @@
 const console = {log: msg => div.innerHTML += `${msg}<br>`};
 const update = (el, msg) => el.innerHTML = msg;
 
+function spectrum(stream, canvas) {
+  const audioCtx = new AudioContext();
+  const analyser = audioCtx.createAnalyser();
+  audioCtx.createMediaStreamSource(stream).connect(analyser);
+  canvas.width = 200;
+  canvas.height = 200;
+  const ctx = canvas.getContext('2d');
+  const data = new Uint8Array(canvas.width);
+  ctx.strokeStyle = 'rgb(0, 125, 0)';
+  const interval = setInterval(() => {
+    ctx.fillStyle = '#a0a0a0';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    analyser.getByteFrequencyData(data);
+    ctx.lineWidth = 2;
+    let x = 0;
+    for (let d of data) {
+      const y = canvas.height - (d / 128) * canvas.height / 4;
+      const c = Math.floor((x * 255) / canvas.width);
+      ctx.fillStyle = `rgb(${c},0,${255 - x})`;
+      ctx.fillRect(x++, y, 2, canvas.height - y);
+    }
+    analyser.getByteTimeDomainData(data);
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    x = 0;
+    for (let d of data) {
+      const y = canvas.height - (d / 128) * canvas.height / 2;
+      x ? ctx.lineTo(x++, y) : ctx.moveTo(x++, y);
+    }
+    ctx.stroke();
+  }, 1000 * canvas.width / audioCtx.sampleRate);
+  const cleanup = () => {
+    audioCtx.close();
+    clearInterval(interval);
+  };
+  const [track] = stream.getAudioTracks();
+  track.addEventListener('ended', cleanup, {once: true});
+  track.stop_ = track.stop;
+  track.stop = () => track.stop_(cleanup());
+  return stream;
+}
+
 function boolOf(s) {
   return String(s).toLowerCase() == 'true';
 }
 
-async function setAudio(v, vinfo, stream) {
+async function setAudio(v, vinfo, stream, canvas) {
+  canvas.style.display = '';
+  stream = spectrum(stream, canvas);
   v.srcObject = stream;
   await new Promise(r => v.onloadedmetadata = r);
   if (v.interval) { clearInterval(v.interval); }
@@ -174,7 +222,7 @@ async function openMic(prefix) {
       cam.track = stream.getAudioTracks()[0];
       const desired = constraintFromDesired(cam.desired, null, cam.enabled);
       await cam.track.applyConstraints(desired);
-      await setAudio(cam.v, cam.info, stream);
+      await setAudio(cam.v, cam.info, stream, prefix == 'A' ? canvasA : canvasB);
       cam.apply(cams[prefix].desired.echoCancellation, cams[prefix].desired.noiseSuppression, cams[prefix].desired.autoGainControl);
       return;
     }
@@ -195,7 +243,7 @@ async function openMic(prefix) {
       audioDevices = devs.filter(d => d.kind=='audioinput');
     }
     refreshSelectors();
-    await setAudio(cam.v, cam.info, stream);
+    await setAudio(cam.v, cam.info, stream, prefix == 'A' ? canvasA : canvasB);
     cam.apply(cams[prefix].desired.echoCancellation, cams[prefix].desired.noiseSuppression, cams[prefix].desired.autoGainControl);
   } catch (e) {
     console.log(e);
