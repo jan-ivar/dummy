@@ -1,0 +1,72 @@
+<html>
+<meta charset=utf-8>
+<button id="start">Start!</button>
+<label><input type="checkbox" id="descramble" checked>descramble</label>
+<button id="stap">Stop!</button><br>
+<video id="video1" width="360" height="270" autoplay muted></video>
+<video id="video2" width="360" height="270" autoplay></video><br>
+<div id="div"></div>
+<script>
+const console = {log: msg => div.innerHTML += `${msg}<br>`};
+  
+let pc1 = new RTCPeerConnection(), pc2 = new RTCPeerConnection();
+
+start.onclick = async () => {
+  pc1.onicecandidate = e => pc2.addIceCandidate(e.candidate);
+  pc2.onicecandidate = e => pc1.addIceCandidate(e.candidate);
+  pc1.oniceconnectionstatechange = () => console.log(pc1.iceConnectionState);
+  pc1.onnegotiationneeded = async () => {
+    await pc1.setLocalDescription(); await pc2.setRemoteDescription(pc1.localDescription);
+    await pc2.setLocalDescription(); await pc1.setRemoteDescription(pc2.localDescription);
+  }
+  video1.srcObject = await navigator.mediaDevices.getUserMedia({video: true});
+  const sender = pc1.addTrack(video1.srcObject.getTracks()[0], video1.srcObject);
+  const promises = [];
+  {
+    const {readable, writable} = sender.createEncodedStreams();
+    promises.push(readable.pipeThrough(new TransformStream({transform})).pipeTo(writable));
+     
+  }
+  video2.srcObject = (await new Promise(r => pc2.ontrack = r)).streams[0];
+  const [receiver] = pc2.getReceivers();
+  {
+    const {readable, writable} = receiver.createEncodedStreams();
+    promises.push(readable.pipeThrough(new TransformStream({transform: transform2})).pipeTo(writable));
+  }
+  await Promise.all(promises);
+};
+
+function transform(chunk, controller) {
+  const bytes = new Uint8Array(chunk.data);
+  const offset = 4; /* leave the first 4 bytes alone in VP8 */
+  for (let i = offset; i < bytes.length; i++) {
+    bytes[i] = ~bytes[i]; /* XOR the rest */
+  }
+  controller.enqueue(chunk);
+}
+
+function transform2(chunk, controller) {
+  const bytes = new Uint8Array(chunk.data);
+  const offset = 4; /* leave the first 4 bytes alone in VP8 */
+  for (let i = offset; i < bytes.length; i++) {
+    bytes[i] = ~bytes[i]; /* XOR the rest */
+  }
+  if (!descramble.checked) {
+    for (let i = offset+10; i < offset+12; i++) {
+      bytes[i] = ~bytes[i]; /* reverse a few XOR for spectacle */
+    }
+  }
+  controller.enqueue(chunk);
+}
+
+stap.onclick = () => {
+  video1.srcObject.getTracks().forEach(track => track.stop());
+  video2.srcObject.getTracks().forEach(track => track.stop());
+  pc1.close();
+  pc2.close();
+  pc1 = new RTCPeerConnection();
+  pc2 = new RTCPeerConnection();
+}
+
+</script>
+</html>
