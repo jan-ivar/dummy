@@ -1,6 +1,7 @@
 const div = document.documentElement
 .appendChild(document.createElement("body"))
 .appendChild(document.createElement("div"));
+div.style.whiteSpace = "pre";
 const console = { log: msg => div.innerHTML += msg + "<br>" };
 
 let chain = Promise.resolve();
