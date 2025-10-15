@@ -34,7 +34,6 @@ start.onclick = async () => {
     const {readable, writable} = receiver.createEncodedStreams();
     worker.postMessage({readable, writable}, {transfer: [readable, writable]});
   }
-  await Promise.all(promises);
 };
 
 stap.onclick = () => {
