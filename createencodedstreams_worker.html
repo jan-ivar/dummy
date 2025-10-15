@@ -36,9 +36,8 @@ start.onclick = async () => {
     worker.postMessage({readable, writable, role: "receive"},
                        {transfer: [readable, writable]});
   }
+  descramble.onclick = () => worker.postMessage({descramble: descramble.checked});
 };
-
-descramble.onclick = () => { worker.postMessage({descramble: descramble.checked}); }
 
 stap.onclick = () => {
   video1.srcObject.getTracks().forEach(track => track.stop());
