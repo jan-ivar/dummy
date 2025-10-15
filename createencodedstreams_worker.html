@@ -50,7 +50,7 @@ stap.onclick = () => {
 // the rest is in a worker
 
 function work() {
-  onmessage = async ({readable, writable, role}) => {
+  onmessage = async ({data: {readable, writable, role}}) => {
     const transform = (role == "send")? transform1 : transform2;
     await readable.pipeThrough(new TransformStream({transform})).pipeTo(writable);
   };
