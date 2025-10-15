@@ -26,13 +26,15 @@ start.onclick = async () => {
   const worker = new Worker(`data:text/javascript,onmessage = ${work.toString()};`);
   {
     const {readable, writable} = sender.createEncodedStreams();
-    worker.postMessage({readable, writable}, {transfer: [readable, writable]});
+    worker.postMessage({readable, writable, role: "send"},
+                       {transfer: [readable, writable]});
   }
   video2.srcObject = (await new Promise(r => pc2.ontrack = r)).streams[0];
   const [receiver] = pc2.getReceivers();
   {
     const {readable, writable} = receiver.createEncodedStreams();
-    worker.postMessage({readable, writable}, {transfer: [readable, writable]});
+    worker.postMessage({readable, writable, role: "receive"},
+                       {transfer: [readable, writable]});
   }
 };
 
@@ -45,9 +47,11 @@ stap.onclick = () => {
   pc2 = new RTCPeerConnection();
 }
 
+// the rest is in a worker
+
 function work() {
-  onmessage = async ({readable, writable}, receive) => {
-    const transform = receive? transform2 : transform1;
+  onmessage = async ({readable, writable, role}) => {
+    const transform = (role == "send")? transform1 : transform2;
     await readable.pipeThrough(new TransformStream({transform})).pipeTo(writable);
   };
 
