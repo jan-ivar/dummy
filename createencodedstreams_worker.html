@@ -38,6 +38,8 @@ start.onclick = async () => {
   }
 };
 
+descramble.onclick = () => { worker.postMessage({descramble: descramble.checked}); }
+
 stap.onclick = () => {
   video1.srcObject.getTracks().forEach(track => track.stop());
   video2.srcObject.getTracks().forEach(track => track.stop());
@@ -50,9 +52,15 @@ stap.onclick = () => {
 // the rest is in a worker
 
 function work() {
-  onmessage = async ({data: {readable, writable, role}}) => {
-    const transform = (role == "send")? transform1 : transform2;
-    await readable.pipeThrough(new TransformStream({transform})).pipeTo(writable);
+  let descrambling = true;
+
+  onmessage = async ({data: {readable, writable, role, descramble}}) => {
+    if (readable) {
+      const transform = (role == "send")? transform1 : transform2;
+      await readable.pipeThrough(new TransformStream({transform})).pipeTo(writable);
+    } else if (descramble !== undefined){
+      descrambling = descramble;
+    }
   };
 
   function transform1(chunk, controller) {
@@ -70,7 +78,7 @@ function work() {
     for (let i = offset; i < bytes.length; i++) {
       bytes[i] = ~bytes[i]; /* XOR the rest */
     }
-    if (!descramble.checked) {
+    if (!descrambling) {
       for (let i = offset+10; i < offset+12; i++) {
         bytes[i] = ~bytes[i]; /* reverse a few XOR for spectacle */
       }
