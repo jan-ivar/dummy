@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<meta charset=utf-8>
+<button id="start">Start</button><button id="stap">Stop!</button> polyfilled w/old tech!<br><br>
+<video id="video1" width="360" height="270" autoplay muted></video>
+<video id="video2" width="360" height="270" autoplay muted></video>
+<div id="div"></div>
+<script src="https://jan-ivar.github.io/polyfills/mediastreamtrackprocessor.js"></script>
+<script src="https://jan-ivar.github.io/polyfills/mediastreamtrackgenerator.js"></script>
+<script>
+const console = {log: msg => div.innerHTML += `${msg}<br>`};
+
+start.onclick = async () => {
+  video1.srcObject = await navigator.mediaDevices.getUserMedia({video: true});
+  const mstp = new MediaStreamTrackProcessor({track: video1.srcObject.getVideoTracks()[0]});
+  const mstg = new MediaStreamTrackGenerator({kind: "video"});
+  video2.srcObject = new MediaStream([mstg]);
+  await mstp.readable.pipeThrough(new TransformStream({transform})).pipeTo(mstg.writable);
+};
+
+const canvas = new OffscreenCanvas(640, 480);
+const ctx = canvas.getContext('2d', {desynchronized: true});
+ctx.translate(canvas.width, 0);
+ctx.scale(-1, 1);
+
+function transform(frame, controller) {
+  ctx.drawImage(frame, 0, 0);
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const {data} = imageData;
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i], g = data[i + 1], b = data[i + 2];
+    data[i]     = 0.393 * r + 0.769 * g + 0.189 * b;
+    data[i + 1] = 0.349 * r + 0.686 * g + 0.168 * b;
+    data[i + 2] = 0.272 * r + 0.534 * g + 0.131 * b;
+  }
+  ctx.putImageData(imageData, 0, 0);
+  controller.enqueue(new VideoFrame(canvas, {timestamp: frame.timestamp}));
+  frame.close();
+}
+
+stap.onclick = () => {
+  video1.srcObject.getTracks().forEach(track => track.stop());
+  video2.srcObject.getTracks().forEach(track => track.stop());
+}
+
+</script>
+</html>
