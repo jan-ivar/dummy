@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<meta charset=utf-8>
+<button id="start">Start</button><button id="stap">Stop!</button> audio polyfilled w/existing tech (unmute the element at your own risk)!<br><br>
+
+
+<audio id="audio" autoplay controls muted></audio> Gain <input id="adjustGain" type="range" min="0" max="10" value="1.5" step="0.1"><br><br>
+<canvas id="canvas" width="500" height="140"></canvas>
+<div id="div"></div>
+<script src="https://jan-ivar.github.io/polyfills/mediastreamtrackprocessor.js"></script>
+<script src="https://jan-ivar.github.io/polyfills/mediastreamtrackgenerator.js"></script>
+<script src="https://jan-ivar.github.io/polyfills/spectrum.js"></script>
+<script>
+const console = {log: msg => div.innerHTML += `${msg}<br>`};
+
+start.onclick = async () => {
+  const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+  const mstp = new MediaStreamTrackProcessor({track: stream.getAudioTracks()[0]});
+  const mstg = new MediaStreamTrackGenerator({kind: "audio"});
+  audio.srcObject = spectrum(new MediaStream([mstg]), canvas);
+  await mstp.readable.pipeThrough(new TransformStream({transform})).pipeTo(mstg.writable);
+};
+
+function transform(audioData, controller) {
+  const buf = new Float32Array(audioData.numberOfFrames * audioData.numberOfChannels);
+  audioData.copyTo(buf, {planeIndex: 0});
+  for (let i = 0; i < buf.length; i++) buf[i] *= adjustGain.value;
+  controller.enqueue(new AudioData({
+    format: 'f32-planar',
+    sampleRate: audioData.sampleRate,
+    numberOfFrames: audioData.numberOfFrames,
+    numberOfChannels: audioData.numberOfChannels,
+    timestamp: audioData.timestamp,
+    data: buf.buffer
+  }, [buf.buffer]));
+}
+
+stap.onclick = () => {
+  video1.srcObject.getTracks().forEach(track => track.stop());
+  video2.srcObject.getTracks().forEach(track => track.stop());
+}
+
+</script>
+</html>
