@@ -236,7 +236,7 @@ async function setSinkId({deviceId, label = defaultSpeakerLabel}) {
 camOn.onclick = async () => {
   try {
     if (camOn.checked && !video.srcObject?.getVideoTracks().length) {
-      const stream = await getUserMedia({video: {deviceId: {exact: localStorage.video}}});
+      const stream = await getUserMedia({video: {deviceId: localStorage.video}});
       video.srcObject = new MediaStream([stream.getVideoTracks()[0], ...(video.srcObject?.getAudioTracks() || [])]);
     }
     const track = video.srcObject?.getVideoTracks()?.[0];
