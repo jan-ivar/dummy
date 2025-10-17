@@ -4,7 +4,7 @@
 <button id="gum_audio">Start Mic!</button>
 <button id="gum_video">Start Cam!</button>
 <button id="gum_both">Start Both!</button>
-<button id="stopp">Stop!</button>
+<button id="stopp">Stop!</button><br>
 <video id="video1" height="120" autoplay></video><br>
 <div id="div"><br></div>
 <script>
@@ -67,6 +67,9 @@ async function enumerate() {
 }
 enumerate();
 
-navigator.mediaDevices.ondevicechange = () => console.log("device change!");
+navigator.mediaDevices.ondevicechange = () => {
+  console.log("device change!");
+  enumerate();
+};
 </script>
 </html>
