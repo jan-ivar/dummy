@@ -73,6 +73,8 @@ navigator.mediaDevices.ondevicechange = () => {
 };
 
 function spectrum(stream) {
+  const [track] = stream.getAudioTracks();
+  if (!track) return stream;
   const audioCtx = new AudioContext();
   const analyser = audioCtx.createAnalyser();
   audioCtx.createMediaStreamSource(stream).connect(analyser);
@@ -112,7 +114,6 @@ function spectrum(stream) {
     audioCtx.close();
     clearInterval(interval);
   };
-  const [track] = stream.getAudioTracks();
   track.addEventListener("ended", cleanup, {once: true});
   track.stop_ = track.stop;
   track.stop = () => track.stop_(cleanup());
