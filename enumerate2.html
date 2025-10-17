@@ -5,7 +5,7 @@
 <button id="gum_video">Start Cam!</button>
 <button id="gum_both">Start Both!</button>
 <button id="stopp">Stop!</button><br>
-<video id="video1" height="120" autoplay></video><br>
+<canvas id="canvas"></canvas><video id="video1" height="120" autoplay></video><br>
 <div id="div"><br></div>
 <script>
 const console = {log: msg => div.innerHTML += `${msg}<br>`};
@@ -25,7 +25,7 @@ async function gum({audio, video}) {
         stream.addTrack(oldaudio);
       }
     }
-    video1.srcObject = stream;
+    video1.srcObject = spectrum(stream);
     unstopped.push(...video1.srcObject.getTracks());
   } catch (e) {
     console.log(e);
@@ -71,5 +71,52 @@ navigator.mediaDevices.ondevicechange = () => {
   console.log("device change!");
   enumerate();
 };
+
+function spectrum(stream) {
+  const audioCtx = new AudioContext();
+  const analyser = audioCtx.createAnalyser();
+  audioCtx.createMediaStreamSource(stream).connect(analyser);
+
+  canvas.width = 80;
+  canvas.height = 120;
+  const ctx = canvas.getContext("2d");
+  const data = new Uint8Array(canvas.width);
+  ctx.strokeStyle = 'rgb(0, 125, 0)';
+
+  const interval = setInterval(() => {
+    ctx.fillStyle = "#a0a0a0";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    analyser.getByteFrequencyData(data);
+    ctx.lineWidth = 2;
+    let x = 0;
+    for (let d of data) {
+      const y = canvas.height - (d / 128) * canvas.height / 4;
+      const c = Math.floor((x*255)/canvas.width);
+      ctx.fillStyle = `rgb(${c},0,${255-x})`;
+      ctx.fillRect(x++, y, 2, canvas.height - y)
+    }
+
+    analyser.getByteTimeDomainData(data);
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    x = 0;
+    for (let d of data) {
+      const y = canvas.height - (d / 128) * canvas.height / 2;
+      x ? ctx.lineTo(x++, y) : ctx.moveTo(x++, y);
+    }
+    ctx.stroke();
+  }, 1000 * canvas.width / audioCtx.sampleRate);
+
+  const cleanup = () => {
+    audioCtx.close();
+    clearInterval(interval);
+  };
+  const [track] = stream.getAudioTracks();
+  track.addEventListener("ended", cleanup, {once: true});
+  track.stop_ = track.stop;
+  track.stop = () => track.stop_(cleanup());
+  return stream;
+}
 </script>
 </html>
