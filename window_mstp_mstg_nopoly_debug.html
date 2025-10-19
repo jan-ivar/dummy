@@ -22,8 +22,6 @@ start.onclick = async () => {
   const mstg = new MediaStreamTrackGenerator({kind: "video"});
   video2.srcObject = new MediaStream([mstg]);
   const readable2 = mstp.readable.pipeThrough(new TransformStream({transform}));
-  const p1 = mstp.readable.pipeTo(new WritableConsole("JIB WritableConsole: "));
-  await p1;
   const p = readable2.pipeTo(mstg.writable);
   await p;
 };
