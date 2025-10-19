@@ -8,13 +8,24 @@
 <script>
 const console = {log: msg => div.innerHTML += `${msg}<br>`};
 
+function WritableConsole(header = "") {
+  return new WritableStream({
+    write: msg => console.log(`${header}${msg}`),
+    close: () => console.log(`${header}👋`),
+    abort: e => console.log(`${header}${e.name}: ${e.message}`)
+  });
+}
+
 start.onclick = async () => {
   video1.srcObject = await navigator.mediaDevices.getUserMedia({video: true});
   const mstp = new MediaStreamTrackProcessor({track: video1.srcObject.getVideoTracks()[0]});
   const mstg = new MediaStreamTrackGenerator({kind: "video"});
   video2.srcObject = new MediaStream([mstg]);
   const readable2 = mstp.readable.pipeThrough(new TransformStream({transform}));
-  await readable2.pipeTo(mstg.writable);
+  const p1 = mstp.readable.pipeTo(new WritableConsole("JIB WritableConsole: "));
+  await p1;
+  const p = readable2.pipeTo(mstg.writable);
+  await p;
 };
 
 const canvas = new OffscreenCanvas(640, 480);
