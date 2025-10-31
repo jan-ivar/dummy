@@ -35,10 +35,7 @@ function transform(audioData, controller) {
   }, [buf.buffer]));
 }
 
-stap.onclick = () => {
-  video1.srcObject.getTracks().forEach(track => track.stop());
-  video2.srcObject.getTracks().forEach(track => track.stop());
-}
+stap.onclick = () => audio.srcObject.getTracks().forEach(track => track.stop());
 
 </script>
 </html>
