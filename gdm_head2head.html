@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html>
+<meta charset=utf-8>
+<style id="compiled-css" type="text/css">
+  body { white-space: nowrap; font-family: monospace; }
+  table { border-collapse: collapse; }
+  td { vertical-align: top; padding-right: 16px; }
+  video{background:#000;}
+  .controls { margin-bottom: 8px; }
+  .row { margin: 4px 0; }
+  .row label { display: inline-block; width: 12ch; }
+  .row.off label { opacity: .4; }
+  input:disabled{ opacity: .4; }
+  select:disabled{ opacity: .4; }
+  .row label + input, .row label + select { margin-left: 6px; }
+</style>
+<table>
+  <tr>
+    <td>
+      <div class="controls">
+        <button id="openA">Screenshare A</button> <select id="selA" style="display:none"></select>
+        <div class="row"><input id="widthOnA" type="checkbox" checked> <label for="widthOnA">Width</label> <input id="widthNumberA" type="number" min="160" max="4096" value="1280" size="5"> <input id="widthRangeA" type="range" min="160" max="4096" value="1280"></div>
+        <div class="row"><input id="heightOnA" type="checkbox" checked> <label for="heightOnA">Height</label> <input id="heightNumberA" type="number" min="120" max="2160" value="720" size="5"> <input id="heightRangeA" type="range" min="120" max="2160" value="720"></div>
+        <div class="row"><input id="fpsOnA" type="checkbox" checked> <label for="fpsOnA">FPS</label> <input id="fpsNumberA" type="number" min="1" max="120" value="30" size="5"> <input id="fpsRangeA" type="range" min="1" max="120" value="30"></div>
+        <div class="row"><input id="resizeOnA" type="checkbox"> <label for="resizeOnA">Resize mode</label> <select id="resizeSelA"><option value="none">none</option><option value="crop-and-scale">crop-and-scale</option></select></div>
+      </div>
+    </td>
+    <td>
+      <div class="controls">
+        <button id="openB">Screenshare B</button> <select id="selB" style="display:none"></select>
+        <div class="row"><input id="widthOnB" type="checkbox" checked> <label for="widthOnB">Width</label> <input id="widthNumberB" type="number" min="160" max="4096" value="1280" size="5"> <input id="widthRangeB" type="range" min="160" max="4096" value="1280"></div>
+        <div class="row"><input id="heightOnB" type="checkbox" checked> <label for="heightOnB">Height</label> <input id="heightNumberB" type="number" min="120" max="2160" value="720" size="5"> <input id="heightRangeB" type="range" min="120" max="2160" value="720"></div>
+        <div class="row"><input id="fpsOnB" type="checkbox" checked> <label for="fpsOnB">FPS</label> <input id="fpsNumberB" type="number" min="1" max="120" value="30" size="5"> <input id="fpsRangeB" type="range" min="1" max="120" value="30"></div>
+        <div class="row"><input id="resizeOnB" type="checkbox"> <label for="resizeOnB">Resize mode</label> <select id="resizeSelB"><option value="none">none</option><option value="crop-and-scale">crop-and-scale</option></select></div>
+      </div>
+    </td>
+  </tr>
+  <tr>
+    <td id="ainfo">0x0</td>
+    <td id="binfo">0x0</td>
+  </tr>
+  <tr>
+    <td><video id="vA" autoplay muted playsinline></video></td>
+    <td><video id="vB" autoplay muted playsinline></video></td>
+  </tr>
+</table>
+<div id="div"></div>
+
+<script>
+const console = {log: msg => div.innerHTML += `${msg}<br>`};
+const update = (el, msg) => el.innerHTML = msg;
+
+const frames = v => v.mozPaintedFrames || v.webkitDecodedFrameCount || 0;
+
+async function setVideo(v, vinfo, stream) {
+  v.srcObject = stream;
+  await new Promise(r => v.onloadedmetadata = r);
+  if (v.interval) { clearInterval(v.interval); }
+  const track = stream.getVideoTracks()[0];
+  let lastF = frames(v), lastT = performance.now();
+  v.interval = setInterval(() => {
+    const s = track.getSettings();
+    const now = performance.now();
+    const f = frames(v);
+    const fps = (f - lastF) / ((now - lastT)/1000);
+    lastF = f; lastT = now;
+    const target = s.frameRate || track.getCapabilities().frameRate.max;
+    const mode = ('resizeMode' in s) ? ` ${s.resizeMode}` : "";
+    update(vinfo, `${v.videoWidth}x${v.videoHeight}x${target} (${fps.toFixed(2)})${mode}`);
+  }, 1000);
+}
+
+let videoDevices = [];
+const cams = {
+  A: {idx: 0, v: vA, info: ainfo, desired: {width: 1280, height: 720, frameRate: 30, resizeMode: 'none'}, enabled: {width: true, height: true, frameRate: true, resizeMode: false}, deviceId: null, selection: null},
+  B: {idx: 1, v: vB, info: binfo, desired: {width: 1280, height: 720, frameRate: 30, resizeMode: 'none'}, enabled: {width: true, height: true, frameRate: true, resizeMode: false}, deviceId: null, selection: null}
+};
+
+function constraintFromDesired(desired, dev, enabled) {
+  const c = {};
+  if (enabled.width) { c.width = desired.width; }
+  if (enabled.height) { c.height = desired.height; }
+  if (enabled.frameRate) { c.frameRate = desired.frameRate; }
+  if (enabled.resizeMode) { c.resizeMode = desired.resizeMode; }
+  if (dev && dev.deviceId) { c.deviceId = {exact: dev.deviceId}; }
+  return c;
+}
+
+function setRangesFromCapabilities(prefix, track) {
+  const caps = track.getCapabilities();
+  const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
+  const set = (name, min, max, val) => {
+    const num = document.getElementById(name + 'Number' + prefix);
+    const ran = document.getElementById(name + 'Range' + prefix);
+    num.min = ran.min = min;
+    num.max = ran.max = max;
+    const clamped = clamp(val, Number(num.min), Number(num.max));
+    num.value = ran.value = clamped;
+    cams[prefix].desired[name == 'fps' ? 'frameRate' : name] = Number(clamped);
+  };
+  if (caps.width) { set('width', caps.width.min, caps.width.max, cams[prefix].desired.width); }
+  if (caps.height) { set('height', caps.height.min, caps.height.max, cams[prefix].desired.height); }
+  if (caps.frameRate) { set('fps', caps.frameRate.min, caps.frameRate.max, cams[prefix].desired.frameRate); }
+  const sel = document.getElementById('resizeSel' + prefix);
+  if (sel) {
+    if (caps.resizeMode) {
+      sel.innerHTML = '';
+      for (const v of caps.resizeMode) {
+        const o = document.createElement('option');
+        o.value = v; o.text = v; sel.appendChild(o);
+      }
+    }
+    if (cams[prefix].desired.resizeMode) { sel.value = cams[prefix].desired.resizeMode; }
+    else { cams[prefix].desired.resizeMode = sel.value; }
+  }
+}
+
+function refreshSelectors(){
+  if (!videoDevices.length) return;
+  for (const [p, sel] of [['A', selA], ['B', selB]]) {
+    sel.style.display = '';
+    sel.innerHTML = '';
+    let i = 0;
+    for (const d of videoDevices) {
+      i++;
+      const o = document.createElement('option');
+      o.value = d.deviceId;
+      o.text = d.label || `Screenshare ${i}`;
+      sel.appendChild(o);
+    }
+    const o2 = document.createElement('option');
+    o2.value = p=='A' ? 'clone:B' : 'clone:A';
+    o2.text = p=='A' ? 'clone of Screenshare B' : 'clone of Screenshare A';
+    sel.appendChild(o2);
+    const other = (p=='A') ? 'B' : 'A';
+    if (cams[p].selection) {
+      sel.value = cams[p].selection;
+    } else if (cams[p].deviceId) {
+      sel.value = cams[p].deviceId;
+    } else if (cams[other].deviceId) {
+      const alt = videoDevices.find(d => d.deviceId != cams[other].deviceId);
+      if (alt) { sel.value = alt.deviceId; }
+    }
+  }
+}
+
+selA.onchange = () => { cams.A.selection = selA.value || null; cams.A.deviceId = (cams.A.selection && cams.A.selection.indexOf('clone:') == 0) ? null : cams.A.selection; openCam('A'); };
+selB.onchange = () => { cams.B.selection = selB.value || null; cams.B.deviceId = (cams.B.selection && cams.B.selection.indexOf('clone:') == 0) ? null : cams.B.selection; openCam('B'); };
+
+function makeApply(prefix) {
+  let applying = false, W, H, F;
+  return async function apply(width, height, frameRate) {
+    W = Number(width); H = Number(height); F = Number(frameRate);
+    const cam = cams[prefix];
+    if (!cam.track || applying) return;
+    try {
+      applying = true;
+      do {
+        width = W; height = H; frameRate = F;
+        const obj = {};
+        if (cam.enabled.width) { obj.width = width; }
+        if (cam.enabled.height) { obj.height = height; }
+        if (cam.enabled.frameRate) { obj.frameRate = frameRate; }
+        if (cam.enabled.resizeMode) { obj.resizeMode = cams[prefix].desired.resizeMode; }
+        await cam.track.applyConstraints(obj);
+      } while (width != W || height != H || frameRate != F);
+    } catch (e) {
+      console.log(e);
+    } finally {
+      applying = false;
+    }
+  }
+}
+
+cams.A.apply = makeApply('A');
+cams.B.apply = makeApply('B');
+
+function syncDesired(prefix) {
+  for (const k of ['width', 'height', 'fps', 'resize']) {
+    if (k == 'resize') {
+      const sel = document.getElementById('resizeSel' + prefix);
+      cams[prefix].desired.resizeMode = sel.value;
+    } else {
+      const num = document.getElementById(k + 'Number' + prefix);
+      const ran = document.getElementById(k + 'Range' + prefix);
+      const val = num.value;
+      num.value = ran.value = val;
+      const prop = (k == 'fps') ? 'frameRate' : k;
+      cams[prefix].desired[prop] = Number(val);
+    }
+  }
+}
+
+function syncEnabled(prefix) {
+  for (const k of ['width', 'height', 'fps', 'resize']) {
+    const chk = document.getElementById(k + 'On' + prefix);
+    const prop = (k == 'fps') ? 'frameRate' : (k == 'resize' ? 'resizeMode' : k);
+    cams[prefix].enabled[prop] = chk.checked;
+  }
+}
+
+async function openCam(prefix) {
+  const cam = cams[prefix];
+  const other = prefix == 'A' ? 'B' : 'A';
+  syncEnabled(prefix);
+  syncDesired(prefix);
+  try {
+    if (cam.stream) { cam.stream.getTracks().forEach(t => t.stop()); }
+    const sel = cam.selection;
+    if (sel && sel.indexOf('clone:') == 0) {
+      const src = sel.slice(6);
+      const srcCam = cams[src];
+      if (!srcCam || !srcCam.stream) { console.log(`source ${src} not open`); return; }
+      const stream = srcCam.stream.clone();
+      cam.stream = stream;
+      cam.track = stream.getVideoTracks()[0];
+      const desired = constraintFromDesired(cam.desired, null, cam.enabled);
+      await cam.track.applyConstraints(desired);
+      setRangesFromCapabilities(prefix, cam.track);
+      await setVideo(cam.v, cam.info, stream);
+      cam.apply(cams[prefix].desired.width, cams[prefix].desired.height, cams[prefix].desired.frameRate);
+      return;
+    }
+    let dev = null;
+    if (cam.deviceId) {
+      dev = {deviceId: cam.deviceId};
+    } else if (videoDevices.length && cams[other].deviceId) {
+      const rest = videoDevices.find(d => d.kind == 'videoinput' && d.deviceId != cams[other].deviceId);
+      if (rest) { dev = {deviceId: rest.deviceId}; }
+    }
+    const constraints = {video: constraintFromDesired(cam.desired, dev, cam.enabled)};
+    const stream = await navigator.mediaDevices.getDisplayMedia(constraints);
+    cam.stream = stream;
+    cam.track = stream.getVideoTracks()[0];
+    cam.deviceId = cam.track.getSettings().deviceId;
+    if (!videoDevices.length){
+      const devs = await navigator.mediaDevices.enumerateDevices();
+      videoDevices = devs.filter(d => d.kind=='videoinput');
+    }
+    refreshSelectors();
+    setRangesFromCapabilities(prefix, cam.track);
+    await setVideo(cam.v, cam.info, stream);
+    cam.apply(cams[prefix].desired.width, cams[prefix].desired.height, cams[prefix].desired.frameRate);
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+openA.onclick = () => openCam('A');
+openB.onclick = () => openCam('B');
+
+function bind(prefix, key, id) {
+  const num = document.getElementById(key + 'Number' + prefix);
+  const ran = document.getElementById(key + 'Range' + prefix);
+  const chk = document.getElementById(key + 'On' + prefix);
+  const row = num.parentElement;
+  const set = val => {
+    num.value = ran.value = val;
+    const prop = (key == 'fps') ? 'frameRate' : key;
+    cams[prefix].desired[prop] = Number(val);
+    if (cams[prefix].track) { cams[prefix].apply(cams[prefix].desired.width, cams[prefix].desired.height, cams[prefix].desired.frameRate); }
+  };
+  num.oninput = () => set(num.value);
+  ran.oninput = () => set(ran.value);
+  chk.onchange = () => {
+    const prop = (key == 'fps') ? 'frameRate' : key;
+    cams[prefix].enabled[prop] = chk.checked;
+    num.disabled = ran.disabled = !chk.checked;
+    if (cams[prefix].track) { cams[prefix].apply(cams[prefix].desired.width, cams[prefix].desired.height, cams[prefix].desired.frameRate); }
+    row.classList.toggle('off', !chk.checked);
+  };
+}
+
+function bindResize(prefix) {
+  const sel = document.getElementById('resizeSel' + prefix);
+  const chk = document.getElementById('resizeOn' + prefix);
+  const row = sel.parentElement;
+  const set = val => {
+    sel.value = val;
+    cams[prefix].desired.resizeMode = val;
+    if (cams[prefix].track) { cams[prefix].apply(cams[prefix].desired.width, cams[prefix].desired.height, cams[prefix].desired.frameRate); }
+  };
+  sel.oninput = () => set(sel.value);
+  chk.onchange = () => {
+    cams[prefix].enabled.resizeMode = chk.checked;
+    sel.disabled = !chk.checked;
+    if (cams[prefix].track) { cams[prefix].apply(cams[prefix].desired.width, cams[prefix].desired.height, cams[prefix].desired.frameRate); }
+    row.classList.toggle('off', !chk.checked);
+  };
+}
+
+for (const p of ['A','B']) { bind(p, 'width'); bind(p, 'height'); bind(p, 'fps'); bindResize(p); }
+
+for (const p of ['A','B']) {
+  ['width','height','fps','resize'].forEach(k => {
+    if (k == 'resize') {
+      const sel = document.getElementById('resizeSel' + p);
+      const chk = document.getElementById('resizeOn' + p);
+      const row = sel.parentElement;
+      sel.disabled = !chk.checked;
+      row.classList.toggle('off', !chk.checked);
+      cams[p].enabled.resizeMode = chk.checked;
+    } else {
+      const num = document.getElementById(k + 'Number' + p);
+      const ran = document.getElementById(k + 'Range' + p);
+      const chk = document.getElementById(k + 'On' + p);
+      const row = num.parentElement;
+      num.disabled = ran.disabled = !chk.checked;
+      row.classList.toggle('off', !chk.checked);
+      const prop = (k == 'fps') ? 'frameRate' : k;
+      cams[p].enabled[prop] = chk.checked;
+    }
+  });
+}
+</script>
+</html>
