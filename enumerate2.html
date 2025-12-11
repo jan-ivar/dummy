@@ -50,7 +50,8 @@ async function enumerate() {
   let s = "<ul>\n";
   const kinds = [
    {kind: "videoinput", heading: "Cameras"},
-   {kind: "audioinput", heading: "Microphones"}
+   {kind: "audioinput", heading: "Microphones"},
+   {kind: "audiooutput", heading: "Speakers"}
   ];
   for (const {kind, heading} of kinds) {
     const list = devices.filter(d => d.kind == kind);
