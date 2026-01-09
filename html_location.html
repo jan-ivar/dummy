@@ -7,7 +7,13 @@
 const console = {log: msg => div.innerHTML += `${msg}<br>`};
 
 geolocation.onlocation = () => {
-  console.log("HERE");
+  if (geolocation.error) {
+    console.log(`Error: ${geolocation.error}`);
+    return;
+  }
+  const {latitude, longitude, accuracy} = geolocation.position.coords;
+  console.log(`Your current position is: ${latitude} x ${longitude}, more or less ${accuracy} meters.`);
+  dumpState();
 };
 
 async function dumpState() {
