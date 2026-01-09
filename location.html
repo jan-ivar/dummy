@@ -8,21 +8,20 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
 
 button.onclick = async () => {
   try {
-    const {coords} = await new Promise(
-      (r, e) => navigator.geolocation.getCurrentPosition(r, e)
-    );
-    console.log(`Your current position is: ${coords.latitude} x ${coords.longitude}, more or less ${coords.accuracy} meters.`);
+    const {coords} = await new Promise((r, e) => navigator.geolocation.getCurrentPosition(r, e));
+    const {latitude, longitude, accuracy} = coords;
+    console.log(`Your current position is: ${latitude} x ${longitude}, more or less ${accuracy} meters.`);
     await dumpState();
     await wait(5000);
-  } catch(e) {
-    console.log(e);
+  } catch (e) {
+    console.log(`${e.name || "Error " + e.code}: ${e.message}`);
   }
 };
 
 async function dumpState() {
   if (navigator.permissions?.query) {
     const {state} = await navigator.permissions.query({name: "geolocation"});
-    console.log(`geolocation query: ${state}`);
+    console.log(`geolocation permission: ${state}`);
   }
 }
 dumpState();

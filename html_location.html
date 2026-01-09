@@ -7,13 +7,14 @@
 const console = {log: msg => div.innerHTML += `${msg}<br>`};
 
 geolocation.onlocation = () => {
-  if (geolocation.error) {
-    console.log(`Error ${geolocation.error.code}: ${geolocation.error.message}`);
-    return;
+  try {
+    if (geolocation.error) throw geolocation.error;
+    const {latitude, longitude, accuracy} = geolocation.position.coords;
+    console.log(`Your current position is: ${latitude} x ${longitude}, more or less ${accuracy} meters.`);
+    dumpState();
+  } catch (e) {
+    console.log(`${e.name || "Error " + e.code}: ${e.message}`);
   }
-  const {latitude, longitude, accuracy} = geolocation.position.coords;
-  console.log(`Your current position is: ${latitude} x ${longitude}, more or less ${accuracy} meters.`);
-  dumpState();
 };
 
 button.onclick = async () => {
@@ -23,13 +24,14 @@ button.onclick = async () => {
     console.log(`Your current position is: ${latitude} x ${longitude}, more or less ${accuracy} meters.`);
     dumpState();
   } catch (e) {
-    console.log(e);
+    console.log(`${e.name || "Error " + e.code}: ${e.message}`);
   }
 };
+
 async function dumpState() {
   if (navigator.permissions?.query) {
     const {state} = await navigator.permissions.query({name: "geolocation"});
-    console.log(`geolocation query: ${state}`);
+    console.log(`geolocation permission: ${state}`);
   }
 }
 dumpState();
