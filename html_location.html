@@ -1,12 +1,12 @@
 <html>
 <meta charset=utf-8>
-<geolocation id="geolocation" autolocate onlocation="onLocation()">
+<geolocation id="geolocation" autolocate>
 </geolocation>
 <div id="div"></div>
 <script>
 const console = {log: msg => div.innerHTML += `${msg}<br>`};
 
-geolocation.onlocation = async () => {
+geolocation.onlocation = () => {
   console.log("HERE");
 };
 
