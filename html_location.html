@@ -1,0 +1,22 @@
+<html>
+<meta charset=utf-8>
+<geolocation id="geolocation" autolocate onlocation="onLocation()">
+</geolocation>
+<div id="div"></div>
+<script>
+const console = {log: msg => div.innerHTML += `${msg}<br>`};
+
+geolocation.onlocation = async () => {
+  console.log("HERE");
+};
+
+async function dumpState() {
+  if (navigator.permissions?.query) {
+    const {state} = await navigator.permissions.query({name: "geolocation"});
+    console.log(`geolocation query: ${state}`);
+  }
+}
+dumpState();
+
+</script>
+</html>
