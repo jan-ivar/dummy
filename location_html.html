@@ -1,9 +1,21 @@
 <html>
 <meta charset=utf-8>
+<button id="button">navigator.geolocation.getCurrentPosition</button>
 <geolocation id="geolocation" autolocate></geolocation>
 <div id="div"></div>
 <script>
 const console = {log: msg => div.innerHTML += `${msg}<br>`};
+
+button.onclick = async () => {
+  try {
+    const {coords} = await new Promise((r, e) => navigator.geolocation.getCurrentPosition(r, e));
+    const {latitude, longitude, accuracy} = coords;
+    console.log(`Your current position is: ${latitude} x ${longitude}, more or less ${accuracy} meters.`);
+  } catch (e) {
+    console.log(`${e.name || "Error " + e.code}: ${e.message}`);
+  }
+  await dumpState();
+};
 
 geolocation.onlocation = () => {
   try {
