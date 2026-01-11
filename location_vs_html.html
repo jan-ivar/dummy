@@ -10,7 +10,7 @@ button.onclick = async () => {
   try {
     const {coords} = await new Promise((r, e) => navigator.geolocation.getCurrentPosition(r, e));
     const {latitude, longitude, accuracy} = coords;
-    console.log(`Your current position is ${latitude} x ${longitude} ± ${accuracy} meters.`);
+    console.log(`Your current position is ${latitude}, ${longitude} ± ${accuracy} meters.`);
   } catch (e) {
     console.log(`${e.name || "Error " + e.code}: ${e.message}`);
   }
@@ -21,7 +21,7 @@ geolocation.onlocation = () => {
   try {
     if (geolocation.error) throw geolocation.error;
     const {latitude, longitude, accuracy} = geolocation.position.coords;
-    console.log(`Your current position is ${latitude} x ${longitude} ± ${accuracy} meters.`);
+    console.log(`Your current position is ${latitude}, ${longitude} ± ${accuracy} meters.`);
   } catch (e) {
     console.log(`${e.name || "Error " + e.code}: ${e.message}`);
   }
