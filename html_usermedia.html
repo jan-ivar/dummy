@@ -1,0 +1,29 @@
+<html>
+<meta charset=utf-8>
+<usermedia id="usermedia"></usermedia>
+<div id="div"></div>
+<script>
+const console = {log: msg => div.innerHTML += `${msg}<br>`};
+
+usermedia.onstream = () => {
+  try {
+    if (usermedia.error) throw usermedia.error;
+    const {stream} = usermedia;
+    video.srcObject = stream;
+  } catch (e) {
+    console.log(`${e.name || "Error " + e.code}: ${e.message}`);
+  }
+  dumpState();
+};
+
+async function dumpState() {
+  if (navigator.permissions?.query) {
+    const {state: vstate} = await navigator.permissions.query({name: "camera"});
+    const {state: astate} = await navigator.permissions.query({name: "microphone"});
+    console.log(`camera permission: ${vstate}, microphone permission: ${astate}`);
+  }
+}
+dumpState();
+
+</script>
+</html>
