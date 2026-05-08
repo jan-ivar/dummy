@@ -1,0 +1,257 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>AudioWorklet over-budget glitch test</title>
+<style>
+  body { font-family: system-ui; max-width: 760px; }
+  canvas { background: #f5f5f5; border: 1px solid #888; display: block; margin: 4px 0; }
+  .row { margin: 8px 0; }
+  .lbl { font-family: monospace; font-size: 12px; color: #444; }
+  pre { background: #f5f5f5; padding: 8px; font-size: 12px; }
+  .num { font-family: monospace; }
+</style>
+</head>
+<body>
+<h3>AudioWorklet → MSTAD → loopback PC: does it glitch when over budget?</h3>
+<p>Sender worklet generates a 1 kHz sine wave, applies gain, then optionally busy-loops for <em>stress</em> ms.
+Receive side uses an AudioWorklet to compute per-block RMS. A clean signal holds steady RMS; a glitch shows up as a dip toward zero.</p>
+
+<div class="row">
+  <button id="start">Start</button>
+  <button id="stop" disabled>Stop</button>
+  <audio id="audio" autoplay controls muted></audio>
+</div>
+<div class="row">
+  <label>Gain: <input id="gain" type="range" min="0" max="1" step="0.05" value="0.3"> <span id="gainValue" class="num">0.30</span></label>
+  &nbsp;&nbsp;
+  <label>Stress (ms extra per process()): <input id="stress" type="range" min="0" max="30" step="0.5" value="0"> <span id="stressValue" class="num">0.0</span></label>
+</div>
+
+<div class="lbl">Sender: process() duration per call. Gray line = 10 ms budget. Red bars = over budget.</div>
+<canvas id="sendCanvas" width="720" height="140"></canvas>
+
+<div class="lbl">Receiver: per-block RMS. Steady = clean. Dips toward 0 = silent gaps / glitches.</div>
+<canvas id="recvCanvas" width="720" height="140"></canvas>
+
+<div class="row">Glitches detected (RMS dropouts): <span id="glitches" class="num">0</span></div>
+<pre id="info"></pre>
+
+<script>
+const senderWorkletSrc = `
+registerProcessor("sender", class extends AudioWorkletProcessor {
+  static get parameterDescriptors() {
+    return [
+      {name: "gain",     defaultValue: 0.3, minValue: 0, maxValue: 1,  automationRate: "k-rate"},
+      {name: "stressMs", defaultValue: 0,   minValue: 0, maxValue: 50, automationRate: "k-rate"},
+    ];
+  }
+  constructor() { super(); this.phase = 0; }
+  process(inputs, outputs, parameters) {
+    const t0 = Date.now();
+    const out = outputs[0];
+    const gain = parameters.gain[0];
+    const stressMs = parameters.stressMs[0];
+    const sr = sampleRate;
+    const freq = 1000;
+    const n = out[0]?.length ?? 0;
+    for (let c = 0; c < out.length; c++) {
+      const ch = out[c];
+      let p = this.phase;
+      for (let i = 0; i < n; i++) {
+        ch[i] = Math.sin(2 * Math.PI * freq * (p / sr)) * gain;
+        p++;
+      }
+    }
+    this.phase += n;
+    if (stressMs > 0) {
+      const target = t0 + stressMs;
+      while (Date.now() < target) { /* busy-loop */ }
+    }
+    const t1 = Date.now();
+    this.port.postMessage({duration: t1 - t0, blockSize: n});
+    return true;
+  }
+});
+`;
+
+const recvWorkletSrc = `
+registerProcessor("recv", class extends AudioWorkletProcessor {
+  process(inputs, outputs) {
+    const inp = inputs[0];
+    let rms = 0;
+    let n = 0;
+    if (inp && inp[0]) {
+      const ch = inp[0];
+      n = ch.length;
+      let s = 0;
+      for (let i = 0; i < n; i++) s += ch[i] * ch[i];
+      rms = n ? Math.sqrt(s / n) : 0;
+    }
+    this.port.postMessage({rms, n});
+    // pass-through so the node stays live in the graph
+    const out = outputs[0];
+    if (inp && out && inp[0] && out[0]) {
+      for (let c = 0; c < out.length; c++) {
+        if (inp[c] && out[c]) out[c].set(inp[c]);
+      }
+    }
+    return true;
+  }
+});
+`;
+
+let stopFn = null;
+
+start.onclick = async () => {
+  start.disabled = true;
+  stop.disabled = false;
+
+  const ac1 = new AudioContext({sinkId: {type: "none"}, renderSizeHint: 480, sampleRate: 48000});
+  await ac1.audioWorklet.addModule(URL.createObjectURL(
+    new Blob([senderWorkletSrc], {type: "application/javascript"})));
+  const sender = new AudioWorkletNode(ac1, "sender", {
+    numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [1],
+  });
+
+  const gainParam = sender.parameters.get("gain");
+  const stressParam = sender.parameters.get("stressMs");
+  gainParam.value = +gain.value;
+  stressParam.value = +stress.value;
+  gain.oninput = () => { gainParam.value = +gain.value; gainValue.textContent = (+gain.value).toFixed(2); };
+  stress.oninput = () => { stressParam.value = +stress.value; stressValue.textContent = (+stress.value).toFixed(1); };
+
+  const dest = ac1.createMediaStreamDestination();
+  sender.connect(dest);
+
+  const iceServers = [{urls: "stun:stun.l.google.com:19302"}];
+  const pc1 = new RTCPeerConnection({iceServers});
+  const pc2 = new RTCPeerConnection({iceServers});
+  pc1.onicecandidate = e => e.candidate && pc2.addIceCandidate(e.candidate);
+  pc2.onicecandidate = e => e.candidate && pc1.addIceCandidate(e.candidate);
+  const remoteTrack = new Promise(r => pc2.ontrack = e => r(e.track));
+  pc1.addTrack(dest.stream.getAudioTracks()[0], dest.stream);
+  await pc1.setLocalDescription();
+  await pc2.setRemoteDescription(pc1.localDescription);
+  await pc2.setLocalDescription();
+  await pc1.setRemoteDescription(pc2.localDescription);
+  const remoteStream = new MediaStream([await remoteTrack]);
+  audio.srcObject = remoteStream;
+
+  const ac2 = new AudioContext({sinkId: {type: "none"}, sampleRate: 48000});
+  await ac2.audioWorklet.addModule(URL.createObjectURL(
+    new Blob([recvWorkletSrc], {type: "application/javascript"})));
+  const recv = new AudioWorkletNode(ac2, "recv", {numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [1]});
+  ac2.createMediaStreamSource(remoteStream).connect(recv);
+  const muteGain = new GainNode(ac2, {gain: 0});
+  recv.connect(muteGain).connect(ac2.destination);
+
+  const SEND_N = 720, RECV_N = 720;
+  const sendBuf = new Float32Array(SEND_N);
+  const sendOver = new Uint8Array(SEND_N);
+  const recvBuf = new Float32Array(RECV_N);
+  let sendIdx = 0, recvIdx = 0;
+  let glitchCount = 0, lastLow = false;
+  const LOW_THRESHOLD = 0.05;
+
+  sender.port.onmessage = ({data}) => {
+    sendBuf[sendIdx % SEND_N] = data.duration;
+    sendOver[sendIdx % SEND_N] = data.duration > 10 ? 1 : 0;
+    sendIdx++;
+  };
+  recv.port.onmessage = ({data}) => {
+    recvBuf[recvIdx % RECV_N] = data.rms;
+    recvIdx++;
+    const isLow = data.rms < LOW_THRESHOLD;
+    if (isLow && !lastLow) {
+      glitchCount++;
+      glitches.textContent = glitchCount;
+    }
+    lastLow = isLow;
+  };
+
+  const describeSink = s => {
+    if (s == null) return "(unsupported)";
+    if (typeof s === "string") return s === "" ? '"" (default)' : JSON.stringify(s);
+    return `{type: ${JSON.stringify(s.type ?? "?")}}`;
+  };
+  const renderInfo = () => {
+    info.textContent = [
+      `Sender   AC: sinkId=${describeSink(ac1.sinkId)}, renderQuantum=${ac1.renderQuantumSize ?? "?"}, sampleRate=${ac1.sampleRate}, baseLatency=${(ac1.baseLatency || 0).toFixed(4)}s`,
+      `Receiver AC: sinkId=${describeSink(ac2.sinkId)}, renderQuantum=${ac2.renderQuantumSize ?? "?"}, sampleRate=${ac2.sampleRate}, baseLatency=${(ac2.baseLatency || 0).toFixed(4)}s`,
+      `Sender block budget at sampleRate=${ac1.sampleRate}, renderQuantum=${ac1.renderQuantumSize ?? "?"}: ${ac1.renderQuantumSize ? (ac1.renderQuantumSize / ac1.sampleRate * 1000).toFixed(2) : "?"} ms`,
+    ].join("\n");
+  };
+  renderInfo();
+  const infoTimer = setInterval(renderInfo, 1000);
+
+  const sctx = sendCanvas.getContext("2d");
+  const rctx = recvCanvas.getContext("2d");
+  const sw = sendCanvas.width, sh = sendCanvas.height;
+  const rw = recvCanvas.width, rh = recvCanvas.height;
+  const SEND_MAX = 35;
+  const RECV_MAX = 0.5;
+
+  let raf = 0;
+  const draw = () => {
+    sctx.fillStyle = "#f5f5f5";
+    sctx.fillRect(0, 0, sw, sh);
+    const budgetY = sh - (10 / SEND_MAX) * sh;
+    sctx.strokeStyle = "#888";
+    sctx.beginPath(); sctx.moveTo(0, budgetY); sctx.lineTo(sw, budgetY); sctx.stroke();
+    sctx.font = "10px monospace"; sctx.fillStyle = "#666";
+    sctx.fillText("10ms budget", 4, budgetY - 2);
+    const colW = sw / SEND_N;
+    for (let i = 0; i < SEND_N; i++) {
+      const idx = (sendIdx + i) % SEND_N;
+      const v = sendBuf[idx];
+      if (v <= 0) continue;
+      const y = sh - Math.min(1, v / SEND_MAX) * sh;
+      sctx.fillStyle = sendOver[idx] ? "#c33" : "#393";
+      sctx.fillRect(i * colW, y, Math.max(1, colW), sh - y);
+    }
+
+    rctx.fillStyle = "#f5f5f5";
+    rctx.fillRect(0, 0, rw, rh);
+    const threshY = rh - (LOW_THRESHOLD / RECV_MAX) * rh;
+    rctx.strokeStyle = "#bbb";
+    rctx.setLineDash([3, 3]);
+    rctx.beginPath(); rctx.moveTo(0, threshY); rctx.lineTo(rw, threshY); rctx.stroke();
+    rctx.setLineDash([]);
+    rctx.fillStyle = "#666"; rctx.font = "10px monospace";
+    rctx.fillText("glitch threshold", 4, threshY - 2);
+    rctx.strokeStyle = "#15a";
+    rctx.lineWidth = 1.5;
+    rctx.beginPath();
+    let started = false;
+    const rColW = rw / RECV_N;
+    for (let i = 0; i < RECV_N; i++) {
+      const idx = (recvIdx + i) % RECV_N;
+      const v = recvBuf[idx];
+      const y = rh - Math.min(1, v / RECV_MAX) * rh;
+      const x = i * rColW;
+      if (!started) { rctx.moveTo(x, y); started = true; }
+      else rctx.lineTo(x, y);
+    }
+    rctx.stroke();
+
+    raf = requestAnimationFrame(draw);
+  };
+  draw();
+
+  stopFn = () => {
+    cancelAnimationFrame(raf);
+    clearInterval(infoTimer);
+    pc1.close(); pc2.close();
+    ac1.close(); ac2.close();
+    audio.srcObject = null;
+    stop.disabled = true;
+    start.disabled = false;
+    stopFn = null;
+  };
+};
+
+stop.onclick = () => stopFn?.();
+</script>
+</body>
+</html>
