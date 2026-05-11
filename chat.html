@@ -1,13 +1,10 @@
 <!DOCTYPE html>
 <html>
-	<body>
-    Chat: <input id="chat" disabled><div id="div"></div>
- 		<script>
-
+<body>Chat: <input id="chat" disabled><div id="div"></div>
+<script>
 const console = {log: msg => div.innerHTML += `${msg}<br>`};
 const pc1 = new RTCPeerConnection(), pc2 = new RTCPeerConnection();
 let i = 0;
-
 pc1.onicecandidate = ({candidate}) => {
   if (!candidate) return;
   console.log(`${++i}. candidate: ${candidate.address}`);
@@ -35,7 +32,6 @@ chat.onkeypress = ({keyCode}) => {
   channel.send(chat.value);
   chat.value = "";
 };
-
-		</script>
-	</body>
+</script>
+</body>
 </html>
