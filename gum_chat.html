@@ -8,9 +8,8 @@ const console = {log: msg => div.innerHTML += `${msg}<br>`};
 const pc1 = new RTCPeerConnection(), pc2 = new RTCPeerConnection();
 let stream;
 
-gum.onclick = async () => {
+gum.onclick = async () =>
   stream = await navigator.mediaDevices.getUserMedia({video: true});
-};
 
 go.onclick = () => {
   let i = 0;
