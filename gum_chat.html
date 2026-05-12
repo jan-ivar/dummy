@@ -9,7 +9,7 @@ const pc1 = new RTCPeerConnection(), pc2 = new RTCPeerConnection();
 let stream;
 
 gum.onclick = async () =>
-  stream = await navigator.mediaDevices.getUserMedia({video: true});
+  stream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
 
 go.onclick = () => {
   let i = 0;
