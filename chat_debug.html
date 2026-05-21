@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<button id="advance">Advance!</button>
+<body>Chat: <input id="chat" disabled><div id="div"></div>
+<script>
+const console = {log: msg => div.innerHTML += `${msg}<br>`};
+const pc1 = new RTCPeerConnection(), pc2 = new RTCPeerConnection();
+
+let pauseResolver = () => {};
+advance.onclick = () => pauseResolver();
+const pause = msg => (console.log(msg), new Promise(r => pauseResolver = r));
+
+(async () => {
+  await pause("Click Advance to continue...");
+  let i = 0;
+  const channel = pc1.createDataChannel("chat");
+  channel.onopen = () => chat.disabled = false;
+  pc2.ondatachannel = ({channel}) => {
+    channel.onopen = () => console.log("Chat!");
+    channel.onmessage = ({data}) => console.log(`> ${data}`);
+  };
+  chat.onkeypress = ({keyCode}) => {
+    if (keyCode != 13) return;
+    channel.send(chat.value);
+    chat.value = "";
+  };
+  const candidates1 = [];
+  pc1.onicecandidate = ({candidate}) => candidates1.push(candidate);
+  const candidates2 = [];
+  pc2.onicecandidate = ({candidate}) => candidates2.push(candidate);
+  await pause("Before pc1 createOffer");
+  const offer = await pc1.createOffer();
+  await pause("Before pc1 sLD");
+  await pc1.setLocalDescription(offer);
+  await pause("After pc1 sLD");
+  await pc2.setRemoteDescription(offer);
+  await pause("Before pc2 createAnswer");
+  const answer = await pc2.createAnswer();
+  await pause("Before pc2 sLD");
+  await pc2.setLocalDescription(answer);
+  await pause("After pc2 sLD");
+  await pc1.setRemoteDescription(answer);
+  await pause("After negotiation");
+  for (const candidate of candidates1) {
+    if (!candidate) break;
+    await pause(`Before pc2 addIce(${++i}. candidate: ${candidate?.address})`);
+    await pc2.addIceCandidate(candidate);
+  }
+  for (const candidate of candidates2) {
+    if (!candidate) break;
+    await pause(`Before pc1 addIce(${++i}. candidate: ${candidate?.address})`);
+    await pc1.addIceCandidate(candidate);
+  }
+  await pause("end");
+})();
+
+pc1.oniceconnectionstatechange = e => console.log(pc1.iceConnectionState);
+
+</script>
+</body>
+</html>
