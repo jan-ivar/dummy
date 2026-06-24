@@ -1,0 +1,28 @@
+<html>
+<meta charset=utf-8>
+<button id="button">User gesture</button><br>
+<div id="div"></div>
+<video id="video" autoplay></video><br>
+<canvas id="canvas"></canvas>
+<script>
+const console = {log: msg => div.innerHTML += `${msg}<br>`};
+
+button.onclick = async () => {
+  try {
+    video.srcObject = canvas.captureStream(0);
+    canvas.getContext('2d').fillRect(0, 0, canvas.width, canvas.height);
+    await new Promise(r => video.onloadedmetadata = r);
+    const p1 = navigator.mediaDevices.getDisplayMedia({video: true});
+    const p2 = video.requestPictureInPicture();
+    video.srcObject = await p1;
+    await new Promise(r => video.onloadedmetadata = r);
+    const {label} = video.srcObject.getVideoTracks()[0];
+    console.log(`${label} (${video.videoWidth} x ${video.videoHeight})`);
+    const pip = await p2;
+    pip.onresize =  () => console.log("resizing pip");
+  } catch (e) {
+    console.log(e);
+  }
+}
+</script>
+</html>
