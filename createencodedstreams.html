@@ -20,17 +20,16 @@ start.onclick = async () => {
     await pc1.setLocalDescription(); await pc2.setRemoteDescription(pc1.localDescription);
     await pc2.setLocalDescription(); await pc1.setRemoteDescription(pc2.localDescription);
   }
-  video1.srcObject = await navigator.mediaDevices.getUserMedia({video: true});
-  const sender = pc1.addTrack(video1.srcObject.getTracks()[0], video1.srcObject);
+  video1.srcObject = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
+
   const promises = [];
-  {
+  for (const track of video1.srcObject.getTracks()) {
+    const sender = pc1.addTrack(track, video1.srcObject);
     const {readable, writable} = sender.createEncodedStreams();
     promises.push(readable.pipeThrough(new TransformStream({transform})).pipeTo(writable));
-     
   }
   video2.srcObject = (await new Promise(r => pc2.ontrack = r)).streams[0];
-  const [receiver] = pc2.getReceivers();
-  {
+  for (const receiver of pc2.getReceivers()) {
     const {readable, writable} = receiver.createEncodedStreams();
     promises.push(readable.pipeThrough(new TransformStream({transform: transform2})).pipeTo(writable));
   }
