@@ -1,0 +1,25 @@
+<html>
+<meta charset=utf-8>
+<button id="button">User gesture</button><br>
+<div id="div"></div>
+<video id="video" width="480" height="270" src="NASA_Scientist_Reveals_Greenlands_Geologic_Past.webm" controls></video><br>
+<canvas id="canvas"></canvas>
+<script>
+const console = {log: msg => div.innerHTML += `${msg}<br>`};
+
+button.onclick = async () => {
+  try {
+    const p1 = video.play();
+    const p2 = video.requestPictureInPicture();
+    await new Promise(r => video.onloadedmetadata = r);
+    const {label} = video.srcObject.getVideoTracks()[0];
+    console.log(`${label} (${video.videoWidth} x ${video.videoHeight})`);
+    const pip = await p2;
+    pip.onresize =  () => console.log("resizing pip");
+    await p1;
+  } catch (e) {
+    console.log(e);
+  }
+}
+</script>
+</html>
