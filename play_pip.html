@@ -1,8 +1,10 @@
 <html>
 <meta charset=utf-8>
+For this to be a valid test of whether user activation consumption interferes
+with autoplay, make sure the video is not auto playing on pageload.
 <button id="button">User gesture</button><br>
 <div id="div"></div>
-<video id="video" width="480" height="270" src="NASA_Scientist_Reveals_Greenlands_Geologic_Past.webm" controls></video><br>
+<video id="video" width="480" height="270" src="NASA_Scientist_Reveals_Greenlands_Geologic_Past.webm" autoplay controls></video><br>
 <canvas id="canvas"></canvas>
 <script>
 const console = {log: msg => div.innerHTML += `${msg}<br>`};
