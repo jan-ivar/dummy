@@ -11,14 +11,11 @@ const console = {log: msg => div.innerHTML += `${msg}<br>`};
 
 button.onclick = async () => {
   try {
-    const p1 = video.play();
-    const p2 = video.requestPictureInPicture();
-    await new Promise(r => video.onloadedmetadata = r);
-    const {label} = video.srcObject.getVideoTracks()[0];
-    console.log(`${label} (${video.videoWidth} x ${video.videoHeight})`);
-    const pip = await p2;
-    pip.onresize =  () => console.log("resizing pip");
-    await p1;
+    await Promise.all([
+      video.play().then(() => console.log("play success")),
+      video.requestPictureInPicture().then(() => console.log("PiP success")),
+      video.requestFullscreen().then(() => console.log("Fullscreen success"))
+    ]);
   } catch (e) {
     console.log(e);
   }
