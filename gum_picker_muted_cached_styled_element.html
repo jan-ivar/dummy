@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" name="viewport" content="width=device-width,initial-scale=1"><meta/>
+  <title>Media-panel demo</title>
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="gum_picker_style.css" />
+  <style>
+    /* No support: the wrapper vanishes, so the old buttons lay out as before. */
+    camera, microphone { display: contents; }
+    /* Support: let the UA draw its own button and hide our fallback content. */
+    .capture-elements camera, .capture-elements microphone { display: revert; flex: 0 0 auto; }
+    .capture-elements camera > *, .capture-elements microphone > * { display: none; }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="media">
+      <video id="video" autoplay></video>
+      <canvas id="canvas" width="80" height="300"></canvas>
+    </div>
+    <div class="panel">
+      <div class="combo">
+        <camera>
+          <input type="checkbox" id="camOn" class="toggle" />
+          <label for="camOn" class="circle">
+            <i id="camIcon" class="fa-solid fa-video"></i>
+          </label>
+        </camera>
+        <select id="camera" class="device"></select>
+      </div>
+      <div class="combo">
+        <microphone>
+          <input type="checkbox" id="micOn" class="toggle" />
+          <label for="micOn" class="circle">
+            <i id="micIcon" class="fa-solid fa-microphone"></i>
+          </label>
+        </microphone>
+        <select id="microphone" class="device"></select>
+      </div>
+      <div class="combo">
+        <label><i class="fa-solid fa-volume-high"></i></label>
+        <select id="speakers" class="device">
+          <option value="">Default system output</option>
+        </select>
+      </div>
+      <button id="halt" class="circle danger">
+        <i class="fa-solid fa-phone-slash"></i>
+      </button>
+    </div>
+  </div>
+  <div id="div"></div>
+  <script src="gum_picker_muted_cached_styled.js"></script>
+  <script>
+    // Capabilities Elements POC. Reuses the functions above (getUserMedia, spectrum,
+    // setSinkId, updateSelectors) so only track acquisition moves to the elements.
+    // https://w3c.github.io/mediacapture-extensions/#media-capture-html-elements
+    if (window.HTMLCameraElement && window.HTMLMicrophoneElement) {
+      document.documentElement.classList.add("capture-elements");
+      const log = msg => div.innerHTML += `${msg}<br>`;
+
+      let camEl = document.querySelector("camera");
+      let micEl = document.querySelector("microphone");
+
+      function wire(el) {
+        const video_ = el.localName == "camera";
+        const type = video_ ? "video" : "audio";
+        const on = video_ ? camOn : micOn;
+
+        // setConstraints() drops required constraints, so ask for the cached id as ideal.
+        if (localStorage[type]) el.setConstraints({deviceId: localStorage[type]});
+
+        el.ontrack = async () => {
+          try {
+            const {track} = el;
+            localStorage[type] = track.getSettings().deviceId;
+            localStorage[type + "Label"] = track.label;
+            on.checked = true;
+            on.onchange();
+            track.enabled = true;
+            if (video_) {
+              video.srcObject = new MediaStream([track, ...(video.srcObject?.getAudioTracks() || [])]);
+            } else {
+              const [audio] = spectrum(new MediaStream([track])).getAudioTracks();
+              if (localStorage.speakers) {
+                await setSinkId(localStorage.speakers, localStorage.speakersLabel);
+              }
+              video.srcObject = new MediaStream([audio, ...(video.srcObject?.getVideoTracks() || [])]);
+            }
+            log(`&lt;${el.localName}&gt; track: ${track.label}`);
+          } catch (e) {
+            log(e);
+          } finally {
+            await updateSelectors();
+          }
+        };
+        el.oncancel = () => log(`&lt;${el.localName}&gt; cancel`);
+        el.onerror = () => log(`&lt;${el.localName}&gt; error: ${el.error?.name} ${el.error?.message}`);
+        return el;
+      }
+
+      // Activation is ignored once an element holds a track, and nothing clears it
+      // ("behaviour for an element with a track still needs to be determined"), so
+      // swap in fresh elements on hang up. Carry the fallback content over, since
+      // the code above still reads the checkboxes.
+      halt.addEventListener("click", () => {
+        [camEl, micEl] = [camEl, micEl].map(el => {
+          const fresh = document.createElement(el.localName);
+          fresh.append(...el.childNodes);
+          el.replaceWith(fresh);
+          return wire(fresh);
+        });
+      });
+
+      wire(camEl);
+      wire(micEl);
+    }
+  </script>
+</body>
+</html>
