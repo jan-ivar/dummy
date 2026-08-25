@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<meta charset=utf-8>
+<button id="button">Open document picture-in-picture</button><br>
+<div id="div"></div>
+<video id="video" autoplay></video><br>
+<script>
+const console = {log: msg => div.innerHTML += `${msg}<br>`};
+
+if (!window.documentPictureInPicture) console.log("No documentPictureInPicture in this browser");
+
+button.onclick = async () => {
+  try {
+    const pip = await documentPictureInPicture.requestWindow({width: 400, height: 200});
+    pip.document.body.innerHTML = `
+      <button id="here">gDM (pip window)</button>
+      <button id="there">gDM (opener window)</button>
+      <div id="log"></div>`;
+    const log = msg => {
+      pip.document.getElementById("log").innerHTML += `${msg}<br>`;
+      console.log(msg);
+    };
+    const gdm = async where => {
+      try {
+        video.srcObject = await where.navigator.mediaDevices.getDisplayMedia({video: true});
+        await new Promise(r => video.onloadedmetadata = r);
+        const {label} = video.srcObject.getVideoTracks()[0];
+        log(`${label} (${video.videoWidth} x ${video.videoHeight})`);
+      } catch (e) {
+        log(e);
+      }
+    };
+    pip.document.getElementById("here").onclick = () => gdm(pip);
+    pip.document.getElementById("there").onclick = () => gdm(window);
+  } catch (e) {
+    console.log(e);
+  }
+}
+</script>
+</html>
