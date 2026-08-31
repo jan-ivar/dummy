@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <meta charset=utf-8>
-<button id="button">Open document picture-in-picture</button><br>
+<button id="button">Toggle document picture-in-picture</button><br>
 <div id="div"></div>
 <video id="video" autoplay></video><br>
 <script>
@@ -11,6 +11,10 @@ if (!window.documentPictureInPicture) console.log("No documentPictureInPicture i
 
 button.onclick = async () => {
   try {
+    if (documentPictureInPicture.window) {
+      documentPictureInPicture.window.close();
+      return;
+    }
     const pip = await documentPictureInPicture.requestWindow({width: 400, height: 200});
     pip.document.body.innerHTML = `
       <button id="here">gDM (pip window)</button>
