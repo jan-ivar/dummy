@@ -24,10 +24,14 @@ button.onclick = async () => {
       try {
         video.srcObject = await where.navigator.mediaDevices.getDisplayMedia({video: true});
         await new Promise(r => video.onloadedmetadata = r);
-        const {label} = video.srcObject.getVideoTracks()[0];
-        log(`${label} (${video.videoWidth} x ${video.videoHeight})`);
+        const [videoTrack] = video.srcObject.getVideoTracks();
+        const [audioTrack] = video.srcObject.getAudioTracks();
+        console.log(`Video: ${videoTrack.label} (${video.videoWidth} x ${video.videoHeight})`);
+        if (audioTrack) {
+          console.log(`Audio: ${audioTrack.label}`);
+        }
       } catch (e) {
-        log(e);
+        console.log(e);
       }
     };
     pip.document.getElementById("here").onclick = () => gdm(pip);
