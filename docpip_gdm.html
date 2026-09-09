@@ -3,10 +3,12 @@
 <meta charset=utf-8>
 <button id="button">Toggle document picture-in-picture</button>
 <button id="gdmButton">gDM (main window)</button><br>
+<button id="fullscreen">Fullscreen</button><br>
 <div id="div"></div>
 <video id="video" autoplay></video><br>
 <script>
 const console = {log: msg => div.innerHTML += `${msg}<br>`};
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 if (!window.documentPictureInPicture) console.log("No documentPictureInPicture in this browser");
 
@@ -48,5 +50,21 @@ button.onclick = async () => {
     console.log(e);
   }
 }
+
+let fullOn = false;
+
+fullscreen.onclick = async () => {
+  try {
+    if (fullOn) {
+      fullOn = false;
+      document.exitFullscreen();
+    } else {
+      fullOn = true;
+      await document.body.requestFullscreen();
+    }
+  } catch (e) {
+    console.log(e);
+  }
+};
 </script>
 </html>
