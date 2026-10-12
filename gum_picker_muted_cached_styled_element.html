@@ -115,6 +115,8 @@
 
       wire(camEl);
       wire(micEl);
+      camEl.onclick = () => console.log("camera click");
+      micEl.onclick = () => console.log("microphone click");
     }
   </script>
 </body>
