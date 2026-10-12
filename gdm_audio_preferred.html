@@ -1,0 +1,22 @@
+<html>
+<meta charset=utf-8>
+<div id="div"></div>
+<button id="button">User gesture</button><br>
+<video id="video" width="640" height="320" autoplay controls></video><br>
+<script>
+const console = {log: msg => div.innerHTML += `${msg}<br>`};
+
+button.onclick = async () => {
+  try {
+    video.srcObject = await navigator.mediaDevices.getDisplayMedia({audio: true, audioSelection: "preferred"});
+    await new Promise(r => video.onloadedmetadata = r);
+    const {label} = video.srcObject.getVideoTracks()[0];
+    console.log(`Video: ${label} (${video.videoWidth} x ${video.videoHeight})`);
+    const audioTrack = video.srcObject.getAudioTracks()[0];
+    console.log(`Audio: ${audioTrack? audioTrack.label : "no track"}`);
+  } catch (e) {
+    console.log(e);
+  }
+}
+</script>
+</html>
