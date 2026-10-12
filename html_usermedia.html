@@ -6,6 +6,8 @@
 <script>
 const console = {log: msg => div.innerHTML += `${msg}<br>`};
 
+usermedia.onclick = () => console.log("click");
+
 usermedia.onstream = () => {
   try {
     if (usermedia.error) throw usermedia.error;
